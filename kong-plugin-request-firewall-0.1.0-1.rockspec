@@ -9,14 +9,14 @@ local pluginName = "request-firewall"
 
 supported_platforms = {"linux", "macosx"}
 source = {
-  url = "http://github.com/Kong/kong-plugin.git",
+  url = "https://github.com/samngms/kong-plugin-request-firewall.git",
   tag = "0.1.0"
 }
 
 description = {
   summary = "Kong Request Firewall Plugin, it can validate various types of input.",
-  homepage = "http://getkong.org",
-  license = "Apache 2.0"
+  homepage = "https://github.com/samngms/kong-plugin-request-firewall",
+  license = "MIT"
 }
 
 dependencies = {
