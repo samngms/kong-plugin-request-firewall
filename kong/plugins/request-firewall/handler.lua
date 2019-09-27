@@ -38,15 +38,15 @@ end
 -- @return true if a valid string, false if otherwise
 local function isValidString(field_attrs, name, value, nested)
   if type(value) == "string" then
-    if nest == 0 and field_attrs.is_array == 1 then return fail("Invalid string[]: " .. name) end
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid string[]: " .. name) end
     if field_attrs.min then
       local s = trim(value)
       if not s or s:len() < field_attrs.min then return fail("String too short: " .. name) end
-    elseif field_attrs.max and value:len() > field_attrs.max then return fail("String too long: " .. name)
-    elseif field_attrs.match and not value:match(field_attrs.match) then return fail("Invalid string content: " .. name)
-    elseif field_attrs.not_match and value:match(field_attrs.not_match) then return fail("Invalid string content: " .. name)
-    elseif field_attrs.enum and not tableContains(field_attrs.enum, value) then return fail("Invalid string content: " .. name)
     end
+    if field_attrs.max and value:len() > field_attrs.max then return fail("String too long: " .. name) end
+    if field_attrs.match and not value:match(field_attrs.match) then return fail("Invalid string content: " .. name) end
+    if field_attrs.not_match and value:match(field_attrs.not_match) then return fail("Invalid string content: " .. name) end
+    if field_attrs.enum and not tableContains(field_attrs.enum, value) then return fail("Invalid string content: " .. name) end
     return true
   elseif type(value) == "table" then
     if nested then return fail("Invalid string[]: " .. name)
@@ -102,17 +102,17 @@ end
 -- @return true if a valid number, false if otherwise
 local function isValidNumber(field_attrs, name, value, nested)
   if type(value) == "number" then
-    if nest == 0 and field_attrs.is_array == 1 then return fail("Invalid number[]: " .. name) end
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid number[]: " .. name) end
     -- if it is already a number, we will ignore the precision checking
-    -- positive default is true for number type
-    if (nil == field_attrs.positive or field_attrs.positive) and value <= 0 then return fail("Number is not larger than zero: ".. name)
-    elseif field_attrs.min and field_attrs.min > value then return fail("Number too small: " .. name)
-    elseif field_attrs.max and field_attrs.max < value then return fail("Number too large: " .. name)
-    elseif field_attrs.enum and not tableContains(field_attrs.enum, value) then return fail("Unexpected number value: " .. name)
-    else return true
-    end
+    -- if both positive and min are not given, we will assume you want positive number only
+    if ((nil == field_attrs.positive and nil == field_attrs.min) or field_attrs.positive) and value <= 0 then return fail("Number is not larger than zero: ".. name) end
+    if field_attrs.min and field_attrs.min > value then return fail("Number too small: " .. name) end
+    if field_attrs.max and field_attrs.max < value then return fail("Number too large: " .. name) end
+    -- note, field_attrs.enum is a string array, need to convert value into a string, otherwise tableContains() will never match
+    if field_attrs.enum and not tableContains(field_attrs.enum, tostring(value)) then return fail("Unexpected number value: " .. name) end
+    return true
   elseif type(value) == "string" then
-    if nest == 0 and field_attrs.is_array == 1 then return fail("Invalid number[]: " .. name) end
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid number[]: " .. name) end
     -- value is a string, good :)
     -- we always call splitDecimal, if it is not \d+(.\d+)? , splitDecimal returns nil
     local numPart, decPart = splitDecimal(value, false)
@@ -120,12 +120,13 @@ local function isValidNumber(field_attrs, name, value, nested)
     if field_attrs.precision and decPart and string.len(decPart) > field_attrs.precision then return fail("Number with invalid precision: " .. name) end
     local v2 = tonumber(value)
     -- positive default is true for number type
-    if (nil == field_attrs.positive or field_attrs.positive) and v2 <= 0 then return fail("Number is not larger than zero: ".. name)
-    elseif field_attrs.min and field_attrs.min > v2 then return fail("Number too small: " .. name)
-    elseif field_attrs.max and field_attrs.max < v2 then return fail("Number too large: " .. name)
-    elseif field_attrs.enum and not tableContains(field_attrs.enum, v2) then return fail("Unexpected number value: " .. name)
-    else return true
-    end
+    -- if both positive and min are not given, we will assume you want positive number only
+    if ((nil == field_attrs.positive and nil == field_attrs.min) or field_attrs.positive) and v2 <= 0 then return fail("Number is not larger than zero: ".. name) end
+    if field_attrs.min and field_attrs.min > v2 then return fail("Number too small: " .. name) end
+    if field_attrs.max and field_attrs.max < v2 then return fail("Number too large: " .. name) end
+    -- note in there, we call tableContains() with "value" instead of "v2", becaues the enum is string type
+    if field_attrs.enum and not tableContains(field_attrs.enum, value) then return fail("Unexpected number value: " .. name) end
+    return true
   elseif type(value) == "table" then
     if nested then return fail("Invalid number[]: " .. name)
     elseif field_attrs.is_array == 0 then return fail("Invalid number: " .. name)
@@ -174,12 +175,14 @@ end
 validateTable = function(config, schema, table_name, params)
   -- get the params and check against the schema
   for name, value in pairs(params) do
+    if nil == schema then return fail("Unexpected parameters in " .. table_name .. "." .. name) end
     local field_attrs = schema[name]
     local b = validateField(config, field_attrs, table_name .. "." .. name, value)
     if not b then return false end
   end
 
   -- loop against the schema and check for required fields
+  if nil == schema then return true end
   for name, field_attrs in pairs(schema) do
     local failed = false
     if field_attrs.required == true then
@@ -224,8 +227,22 @@ function plugin:access(config)
     if not validateTable(config, config.body, "body", body) then
       kong.response.exit(400)
     end
-  else -- body is nil
-    -- TODO, check mimetype
+  elseif nil ~= err then
+    local te = kong.request.get_header("Transfer-Encoding") 
+    if nil ~= te and nil ~= te:find("chunked", 1, true) then
+      fail("Invalid body: " .. tostring(error))
+      kong.response.exit(400)
+    end
+    local s = kong.request.get_header("Content-Length")
+    if nil ~= s then
+      local len = tonumber(s)
+      if nil ~= len and len == 0 then
+        -- the only content for we are good to go if the len is defined and is 0
+      else 
+        fail("Invalid body: " .. tostring(error))
+        kong.response.exit(400)
+      end
+    end
   end
 end
 

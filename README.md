@@ -1,3 +1,32 @@
+# Testing the plugin
+
+The plugin can only be tested in [Kong Vagrant](https://github.com/Kong/kong-vagrant) environment. 
+
+In `Kong Vagrant` README file, they mention
+
+```sh
+$ git clone https://github.com/Kong/kong-plugin
+..
+$ export KONG_PLUGINS=bundled,myplugin
+```
+
+Change that line to 
+```sh
+$ git clone https://github.com/samngms/kong-plugin-request-firewall kong-plugin
+..
+$ export KONG_PLUGINS=bundled,kong-plugin-request-firewall
+```
+
+This is needed because the Vagrant script hardcoded the path `kong-plugin`
+
+Once everything is ready, you can run the following command
+```sh
+$ vagrant ssh
+... inside vagrant ...
+$ cd /kong
+$ bin/busted -v -o gtest /kong-plugin/spec
+```
+
 # About luarocks
 
 If you use `brew install kong`, it actually install both `kong` and `openresty`, with `luarocks` installed under `openresty`
