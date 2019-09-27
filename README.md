@@ -1,3 +1,110 @@
+# Validations
+
+For each parameter, you can specify a set of validation criteria
+
+| Criterion | Criterion's type | Decription |
+|-----------|:-----------------|:-----------|
+`type` | `strig` | it is usually `string|number`, but it can also be a custom type
+`is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
+`required` | `boolean` | whether the parameter is required, otherwise, it is optional
+`precision` | `number` | only applicable when `type=number`, the number of decimal number place.
+`positive` | `boolean` | only applicable when `type=number`, if ture, the number has to be larger than zero (cannot be zero)
+`min` | `number` | `type=number` this is the minimum value (inclusive), `type=string` this is the minimum string length (inclusive)
+`max` | `number` | `type=number` this is the maximum value (inclusive), `type=string` this is the maximum string length (inclusive)
+`match` | `string` | only applicable when `type=string`, the parameter is only valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching.
+`not_match` | `string` | only applicable when `type=string`, the parameter is *not* valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching.
+`enum` | `string[]` | enumeration type such as `["Monday", "Tuesday", "Wednesday"]` etc
+
+\#1 note for `is_array`: there is no way to specify an array with 1 element in `application/x-www-form-urlencoded`, therefore you should not use `is_array=1` in query string parameters or body with `x-www-form-urlencoded`
+
+\#2 note for `precision`: for JSON data type, such as `{age: 12.345678}`, the age value is automatically converted into a Lua number, which is a double. Since the precision is not accurate in this caes, it will be disabled. However, if the JSON data is `{age: "12.345678"}`, the string to number conversion is done by the plugin and the precision check will be applied accordingly.
+
+\#3 note for `positive`: for `type=number`, and `min` is not defined, `positived=true` if not defined. 
+
+\#4 note for `match` and `not_match`: these are [Lua pattern](https://www.lua.org/pil/20.2.html) matching, not regular expression pattern matching (which is much more powerful). Please also note these sub-string match, not full string matching. To do full string matching, prefix and suffix with `"^foobar$"`
+
+\#5 note for `enum`: since the `enum` is specified as `string[]`, for `type=number`, the input parameter will be converted into `string` before matching.
+
+# Custom Type
+
+Let's say we want to validate the following JSON
+
+```js
+{
+    user: {
+        uid: 123,
+        roles: ["manager", "finance_dept"]
+    },
+    transaction: {
+        to: "Mary",
+        amount: 12.34
+    }
+}
+```
+The above data schema can be simulated by the following (let's call it a UserTx class)
+
+```js
+UserClass: {
+    uid: {type: "nubmer", max: 1000000},
+    roles: {type: "string", is_array: 1, min: 1, max: 32}
+}
+Transaction: {
+    to: {type: "string", min: 1, max: 100},
+    amount: {type: "number", max: 1000000}
+} 
+UserTx: {
+    user: {type: "UserClass"},
+    transaction: {type: "Transaction"}
+}
+```
+
+# Configuration
+
+There are three major sections in the config
+1. query
+2. body
+3. custom_classes
+
+Take the above `UserTx` as an example, the config will be
+
+```js
+{
+    "config": {
+        "query": {
+            "search": {"type": "string"},
+            "page": {"type": "number", "max": 100}
+        },
+        "body": {
+            "usertx": {"type": "UserTx"},
+            "timestamp": {"type": "number"}
+        }
+        "custom_classes": {
+            "UserClass": {
+                "uid": {"type": "nubmer", "max": 1000000},
+                "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
+            }
+            "Transaction": {
+                "to": {"type": "string", "min": 1, "max": 100},
+                "amount": {"type": "number", "max": 1000000}
+            } 
+            "UserTx": {
+                "user": {"type": "UserClass"},
+                "transaction": {"type": "Transaction"}
+            }
+        }    
+    }
+}
+```
+
+Therefore, when setting the plugin via Kong Admin RESTful API
+
+```sh
+$ curl -X POST http://localhost:8001/routes/[route_id]/plugins \
+-H "Content-Type: application/json" \
+-d '{"name": "request-firewall", "config": { your_config_data_here }}'
+```
+
+
 # Testing the plugin
 
 The plugin can only be tested in [Kong Vagrant](https://github.com/Kong/kong-vagrant) environment. 
