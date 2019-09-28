@@ -30,6 +30,40 @@ function trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
+
+--- check the input is a valid boolean
+-- @params field_attrs object with the following fields ["type", "is_array"] "min", "max", "match", "not_match", "enum", "precision", "positive" are ignored
+-- @params name the name of the field we are validating, for logging only
+-- @params value the input to be validated
+-- @params nested false on the first call, true on nested call
+-- @return true if a valid boolean, false if otherwise
+local function isValidBoolean(field_attrs, name, value, nested)
+  if type(value) == "boolean" then
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid boolean[]: " .. name) end
+    return true
+  elseif type(value) == "string" then
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid boolean[]: " .. name) end
+    local v = value:lower();
+    if v ~= "true" and v~= "false" and v~= "0" and v ~= "1" then return fail("Invalid boolean: " .. name) end
+    return true
+  elseif type(value) == "number" then
+    if not nested and field_attrs.is_array == 1 then return fail("Invalid boolean[]: " .. name) end
+    if value ~= 0 and value ~= 1 then return fail("Invalid boolean: " .. name) end
+    return true
+  elseif type(value) == "table" then
+    if nested then return fail("Invalid boolean[]: " .. name)
+    elseif field_attrs.is_array == 0 then return fail("Invalid boolean: " .. name)
+    end
+    for idx, v in pairs(value) do
+      if type(idx) ~= "number" or not isValidBoolean(field_attrs, name, v, true) then return false end
+    end
+    return true
+  else
+    return fail("Invalid boolean: " .. name)
+  end
+end
+
+
 --- check the input is a valid string
 -- @params field_attrs object with the following fields ["type", "is_array", "min", "max", "match", "not_match", "enum"], "precision", "positive" are ignored
 -- @params name the name of the field we are validating, for logging only
@@ -161,6 +195,8 @@ local function validateField(config, field_attrs, name, value)
     return isValidString(field_attrs, name, value, false)
   elseif type_name == "number" then
     return isValidNumber(field_attrs, name, value, false)
+  elseif type_name == "boolean" then
+    return isValidBoolean(field_attrs, name, value, false)
   else
     -- custom class type
     local custom_classes = config.custom_classes

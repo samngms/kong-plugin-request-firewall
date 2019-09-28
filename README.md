@@ -4,7 +4,7 @@ For each parameter, you can specify a set of validation criteria
 
 | Criterion | Criterion's type | Decription |
 |-----------|:-----------------|:-----------|
-`type` | `strig` | it is usually `string|number`, but it can also be a custom type
+`type` | `strig` | it is usually `string|number|boolean`, but it can also be a custom type
 `is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
 `required` | `boolean` | whether the parameter is required, otherwise, it is optional
 `precision` | `number` | only applicable when `type=number`, the number of decimal number place.
