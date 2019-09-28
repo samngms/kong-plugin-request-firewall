@@ -45,13 +45,13 @@ The above data schema can be simulated by the following (let's call it a UserTx 
 
 ```js
 UserClass: {
-    uid: {type: "nubmer", max: 1000000},
+    uid: {type: "number", max: 1000000},
     roles: {type: "string", is_array: 1, min: 1, max: 32}
-}
+},
 Transaction: {
     to: {type: "string", min: 1, max: 100},
     amount: {type: "number", max: 1000000}
-} 
+},
 UserTx: {
     user: {type: "UserClass"},
     transaction: {type: "Transaction"}
@@ -77,16 +77,16 @@ Take the above `UserTx` as an example, the config will be
         "body": {
             "usertx": {"type": "UserTx"},
             "timestamp": {"type": "number"}
-        }
+        },
         "custom_classes": {
             "UserClass": {
-                "uid": {"type": "nubmer", "max": 1000000},
+                "uid": {"type": "number", "max": 1000000},
                 "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
-            }
+            },
             "Transaction": {
                 "to": {"type": "string", "min": 1, "max": 100},
                 "amount": {"type": "number", "max": 1000000}
-            } 
+            },
             "UserTx": {
                 "user": {"type": "UserClass"},
                 "transaction": {"type": "Transaction"}
@@ -124,15 +124,20 @@ $ git clone https://github.com/samngms/kong-plugin-request-firewall kong-plugin
 $ export KONG_PLUGINS=bundled,kong-plugin-request-firewall
 ```
 
+Note, the `export=...` is not needed unless you need to *start* the real Kong (not just run in test mode).
+
 This is needed because the Vagrant script hardcoded the path `kong-plugin`
 
 Once everything is ready, you can run the following command
 ```sh
+$ vagrant up
 $ vagrant ssh
 ... inside vagrant ...
 $ cd /kong
 $ bin/busted -v -o gtest /kong-plugin/spec
 ```
+
+All the Kong server logs can be found in `/kong/servroot/logs`
 
 # About luarocks
 

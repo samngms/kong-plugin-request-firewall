@@ -39,9 +39,12 @@ end
 local function isValidString(field_attrs, name, value, nested)
   if type(value) == "string" then
     if not nested and field_attrs.is_array == 1 then return fail("Invalid string[]: " .. name) end
-    if field_attrs.min then
+    if field_attrs.min or field_attrs.required then
       local s = trim(value)
-      if not s or s:len() < field_attrs.min then return fail("String too short: " .. name) end
+      local min = 0
+      -- min is minimum string length, it won't be negative anyway
+      if field_attrs.min then min = field_attrs.min end
+      if not s or s:len() < min then return fail("String too short: " .. name) end
     end
     if field_attrs.max and value:len() > field_attrs.max then return fail("String too long: " .. name) end
     if field_attrs.match and not value:match(field_attrs.match) then return fail("Invalid string content: " .. name) end
@@ -188,22 +191,11 @@ validateTable = function(config, schema, table_name, params)
     if field_attrs.required == true then
       local value = params[name]
       -- what is the meaning of required?
-      -- for string|number, it should be non-empty
       -- for boolean, as long as the value exist, that's fine
+      -- for string, we have already checked the string is non-empty in isValidString()
+      -- for number, a nil value won't be a valid number anyway
       if nil == value then
         -- value does not exist
-        failed = true
-      elseif field_attrs.type ~= "boolean" then
-        -- value is non-nil
-        if type(value) == "string" then
-          local v2 = string.lower(value)
-          failed = (v2 == "true" or v2 == "false")
-        elseif type(value) == "number" then
-          failed = (0 == value or 1 == value)
-        else
-          failed = true
-        end
-      elseif type(value) == "string" and value == "" then
         failed = true
       end
     end
