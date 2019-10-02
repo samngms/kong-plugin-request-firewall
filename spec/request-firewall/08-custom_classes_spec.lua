@@ -20,24 +20,28 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        body = {
-            usertx = {type = "UserTx"},
-            timestamp = {type = "number", required = true}
-        },
-        custom_classes = {
-            UserClass = {
-                uid = {type = "number", required = true, max = 1000000},
-                roles = {type = "string", is_array = 1, min = 1, max = 32}
+        exact_match = {
+          ["/post"] = {
+            body = {
+                usertx = {type = "UserTx"},
+                timestamp = {type = "number", required = true}
             },
-            Transaction = {
-                to = {type = "string", min = 1, max = 100},
-                amount = {type = "number", max = 1000000}
-            }, 
-            UserTx = {
-                user = {type = "UserClass", required = true},
-                transaction = {type = "Transaction"}
-            }
-        }    
+            custom_classes = {
+                UserClass = {
+                    uid = {type = "number", required = true, max = 1000000},
+                    roles = {type = "string", is_array = 1, min = 1, max = 32}
+                },
+                Transaction = {
+                    to = {type = "string", min = 1, max = 100},
+                    amount = {type = "number", max = 1000000}
+                }, 
+                UserTx = {
+                    user = {type = "UserClass", required = true},
+                    transaction = {type = "Transaction"}
+                }
+            }    
+          }
+        }
       }
 
       if KONG_VERSION >= version("0.35.0") or

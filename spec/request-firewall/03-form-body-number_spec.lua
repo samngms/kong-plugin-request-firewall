@@ -20,12 +20,16 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        body = {
-          n0 = {type = "number"},
-          n1 = {type = "number", precision = 4, min = -10, max = 100},
-          n2 = {type = "number", positive = false, max = 100},
-          n3 = {type = "number", is_array = 2, max = 100},
-          n4 = {type = "number", is_array = 2, enum = {"10", "100", "1000"}},
+        exact_match = {
+          ["/post"] = {
+            body = {
+              n0 = {type = "number"},
+              n1 = {type = "number", precision = 4, min = -10, max = 100},
+              n2 = {type = "number", positive = false, max = 100},
+              n3 = {type = "number", is_array = 2, max = 100},
+              n4 = {type = "number", is_array = 2, enum = {"10", "100", "1000"}},
+            }
+          }
         }
       }
 

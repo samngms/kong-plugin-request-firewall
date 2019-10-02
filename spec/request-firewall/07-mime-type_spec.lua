@@ -20,11 +20,23 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        query = {
-          q1 = {type = "string"}
-        },
-        body = {
-          b1 = {type = "string"},
+        exact_match = {
+          ["/get"] = {
+            query = {
+              q1 = {type = "string"}
+            },
+            body = {
+              b1 = {type = "string"},
+            }
+          },
+          ["/post"] = {
+            query = {
+              q1 = {type = "string"}
+            },
+            body = {
+              b1 = {type = "string"},
+            }
+          }
         }
       }
 

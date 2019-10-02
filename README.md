@@ -1,10 +1,10 @@
 # Validations
 
-For each parameter, you can specify a set of validation criteria
+Per each url path, and for each parameter, you can specify a set of validation criteria
 
 | Criterion | Criterion's type | Decription |
 |-----------|:-----------------|:-----------|
-`type` | `strig` | it is usually `string|number|boolean`, but it can also be a custom type
+`type` | `strig` | it is usually `string\|number\|boolean`, but it can also be a custom type
 `is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
 `required` | `boolean` | whether the parameter is required, otherwise, it is optional
 `precision` | `number` | only applicable when `type=number`, the number of decimal number place.
@@ -60,7 +60,34 @@ UserTx: {
 
 # Configuration
 
-There are three major sections in the config
+There are two types of paths in the config, `exact_match` and `pattern_match`
+
+```js
+{
+    config: {
+        exact_match: {
+            "/foo/bar1": {
+                // configuration for /foo/bar, see below
+            },
+            "/foo/bar2": {
+                // configuration for /foo/bar2, see below
+            }
+        },
+        pattern_match: {
+            "/get_balance/" {
+                path_pattern: "/get_balance/${user}"
+                // configuration for "/get_balance/${user}
+            },
+            "/create/order/" {
+                path_pattern: "/create/order/${user}/${id}"
+                // configration for "/create/order/${user}/${id}
+            }
+        }
+    }
+}
+```
+
+And for each path, the configuration contains the following sections
 1. query
 2. body
 3. custom_classes
@@ -69,7 +96,7 @@ Take the above `UserTx` as an example, the config will be
 
 ```js
 {
-    "config": {
+    "/foo/bar": {
         "query": {
             "search": {"type": "string"},
             "page": {"type": "number", "max": 100}
@@ -101,7 +128,7 @@ Therefore, when setting the plugin via Kong Admin RESTful API
 ```sh
 $ curl -X POST http://localhost:8001/routes/[route_id]/plugins \
 -H "Content-Type: application/json" \
--d '{"name": "request-firewall", "config": { your_config_data_here }}'
+-d '{"name": "request-firewall", "config": { whole_config_data_here }}'
 ```
 
 

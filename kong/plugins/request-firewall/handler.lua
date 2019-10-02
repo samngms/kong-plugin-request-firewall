@@ -244,15 +244,22 @@ end
 function plugin:access(config)
   plugin.super.access(self)
 
+  -- get per url config object
+  local path = kong.request.get_path()
+  local cfg = config.exact_match and config.exact_match[path]
+  if nil == cfg then
+    kong.response.exit(400)
+  end
+
   -- check query params
-  if not validateTable(config, config.query, "query", kong.request.get_query()) then
+  if not validateTable(cfg, cfg.query, "query", kong.request.get_query()) then
     kong.response.exit(400)
   end
 
   -- check body params, this includes JSON, x-www-url-encoded and multi-part etc..
   local body, err, mimetype = kong.request.get_body()
   if body ~= nil then
-    if not validateTable(config, config.body, "body", body) then
+    if not validateTable(cfg, cfg.body, "body", body) then
       kong.response.exit(400)
     end
   elseif nil ~= err then

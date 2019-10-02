@@ -20,11 +20,15 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        body = {
-          b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
-          b_match = {type = "string", match = "^sam$"},
-          b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
-          b_array = {type = "string", is_array = 1}
+        exact_match = {
+          ["/post"] = {
+            body = {
+              b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
+              b_match = {type = "string", match = "^sam$"},
+              b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
+              b_array = {type = "string", is_array = 1}
+            }
+          }
         }
       }
 
