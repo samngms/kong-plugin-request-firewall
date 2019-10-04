@@ -27,5 +27,6 @@ build = {
   modules = {
     ["kong.plugins.request-firewall.handler"] = "kong/plugins/request-firewall/handler.lua",
     ["kong.plugins.request-firewall.schema"] = "kong/plugins/request-firewall/schema.lua",
+    ["kong.plugins.request-firewall.access"] = "kong/plugins/request-firewall/access.lua",
   }
 }
