@@ -28,11 +28,14 @@ function plugin:access(config)
   local cfg = config.exact_match and config.exact_match[path]
   if nil == cfg then
     kong.response.exit(400)
+    return
   end
 
   -- check query params
-  if not m.validateTable(cfg, cfg.query, "query", kong.request.get_query()) then
+  local query = kong.request.get_query()
+  if not m.validateTable(cfg, cfg.query, "query", query) then
     kong.response.exit(400)
+    return
   end
 
   -- check body params, this includes JSON, x-www-url-encoded and multi-part etc..
@@ -40,12 +43,14 @@ function plugin:access(config)
   if body ~= nil then
     if not m.validateTable(cfg, cfg.body, "body", body) then
       kong.response.exit(400)
+      return
     end
   elseif nil ~= err then
     local te = kong.request.get_header("Transfer-Encoding") 
     if nil ~= te and nil ~= te:find("chunked", 1, true) then
       m.fail("Invalid body: " .. tostring(error))
       kong.response.exit(400)
+      return
     end
     local s = kong.request.get_header("Content-Length")
     if nil ~= s then
@@ -55,9 +60,11 @@ function plugin:access(config)
       else 
         m.fail("Invalid body: " .. tostring(error))
         kong.response.exit(400)
+        return
       end
     end
   end
+
 end
 
 -- set the plugin priority, which determines plugin execution order
