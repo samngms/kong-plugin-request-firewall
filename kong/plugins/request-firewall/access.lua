@@ -17,6 +17,40 @@ function m.trim(s)
     return s:match("^%s*(.-)%s*$")
 end
 
+--- check the input is a valid file
+-- @params field_attrs object with the following fields ["type", "min", "max", "match", "not_match"], "is_array", "enum", "precision", "positive" are ignored
+-- @params name the name of the field we are validating, for logging only
+-- @params value the input to be validated
+-- @params nested false on the first call, true on nested call
+-- @return true if a valid boolean, false if otherwise
+function m.isValidFile(field_attrs, name, value, nested)
+    local t = type(value)
+    if t == "boolean" or t == "string" or t == "number" then
+        return m.fail("Invalid file: " .. name)
+    end
+    if field_attrs.min then
+        if not value["size"] or type(value["size"]) ~= "number" or value["size"] < field_attrs.min then
+            return m.fail("File size too small: " .. name)
+        end
+    end
+    if field_attrs.max then
+        if not value["size"] or type(value["size"]) ~= "number" or value["size"] > field_attrs.max then
+            return m.fail("File size too large: " .. name)
+        end
+    end
+    if field_attrs.match then
+        if not value["filename"] or type(value["filename"]) ~= "string" or not value["filename"]:match(field_attrs.match) then
+            return m.fail("Invalid filename: " .. name)
+        end
+    end
+    if field_attrs.not_match then
+        if not value["filename"] or type(value["filename"]) ~= "string" or value["filename"]:match(field_attrs.not_match) then
+            return m.fail("Invalid filename: " .. name)
+        end
+    end
+    return true
+end
+
 --- check the input is a valid boolean
 -- @params field_attrs object with the following fields ["type", "is_array"] "min", "max", "match", "not_match", "enum", "precision", "positive" are ignored
 -- @params name the name of the field we are validating, for logging only
@@ -236,6 +270,8 @@ function m.validateField(config, field_attrs, name, value)
         return m.isValidNumber(field_attrs, name, value, false)
     elseif type_name == "boolean" then
         return m.isValidBoolean(field_attrs, name, value, false)
+    elseif type_name == "file" then
+        return m.isValidFile(field_attrs, name, value, false)
     else
         -- custom class type
         local custom_classes = config.custom_classes

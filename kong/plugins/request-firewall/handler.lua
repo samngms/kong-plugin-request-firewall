@@ -8,6 +8,8 @@ local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
 -- load the base plugin object and create a subclass
 local plugin = require("kong.plugins.base_plugin"):extend()
 
+local MultiPart = require("kong.plugins.request-firewall.multipart")
+
 local m = require("kong.plugins.request-firewall.access")
 -- redefine fail function
 m.fail = function(msg)
@@ -39,30 +41,25 @@ function plugin:access(config)
   end
 
   -- check body params, this includes JSON, x-www-url-encoded and multi-part etc..
-  local body, err, mimetype = kong.request.get_body()
-  if body ~= nil then
-    if not m.validateTable(cfg, cfg.body, "body", body) then
+  local contentType = kong.request.get_header("Content-Type")
+  local parser = MultiPart:new(contentType)
+  -- we have to call get_body(), otherwies, get_body_file() will always be nil
+  local body, err, mimetype = kong.request.get_body() 
+  if parser:isFormData() then 
+    local filename = ngx.req.get_body_file()
+    local status, err = pcall(function() body = parser:parseFile(filename) end)
+    if not status then 
+      kong.log.info(err)
       kong.response.exit(400)
       return
     end
-  elseif nil ~= err then
-    local te = kong.request.get_header("Transfer-Encoding") 
-    if nil ~= te and nil ~= te:find("chunked", 1, true) then
-      m.fail("Invalid body: " .. tostring(error))
-      kong.response.exit(400)
-      return
-    end
-    local s = kong.request.get_header("Content-Length")
-    if nil ~= s then
-      local len = tonumber(s)
-      if nil ~= len and len == 0 then
-        -- the only content for we are good to go if the len is defined and is 0
-      else 
-        m.fail("Invalid body: " .. tostring(error))
-        kong.response.exit(400)
-        return
-      end
-    end
+  end
+
+  if nil == body then body = {} end
+
+  if not m.validateTable(cfg, cfg.body, "body", body) then
+    kong.response.exit(400)
+    return
   end
 
 end
