@@ -60,7 +60,7 @@ ab=41abc
 
         local data, err = pcall(function () parser:parseFile(filename) end)
         assert.is.not_nil(err)
-        local idx = string.find(err, "Invalid Content-Transfer-Encoding", 1, true)
+        local idx = string.find(err.msg, "invalid Content-Transfer-Encoding", 1, true)
         assert.is.not_nil(idx)
     end)
 
@@ -80,7 +80,7 @@ abcdef
 
         local data, err = pcall(function () parser:parseFile(filename) end)
         assert.is.not_nil(err)
-        local idx = string.find(err, "end-of-boundary", 1, true)
+        local idx = string.find(err.msg, "can't find mime boundary", 1, true)
         assert.is.not_nil(idx)
     end)
 end)

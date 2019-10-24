@@ -1,7 +1,7 @@
 local m = {}
 
 function m.fail(msg)
-    print(msg)
+    error({msg = msg})
     return false
 end
 

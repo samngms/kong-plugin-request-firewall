@@ -7,6 +7,8 @@ return {
     { config = {
       type = "record",
       fields = {
+        { err_code = { type = "number" } },
+        { debug = { type = "boolean", default = false } },
         { exact_match = {
           type = "map",
           -- the key is the path of the url

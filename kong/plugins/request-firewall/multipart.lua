@@ -83,22 +83,22 @@ function MultiPart:parseFile(filename)
         if init then
             init = false
             if idx == nil then
-                error("error finding mime boundary")
+                error({msg = "error finding mime boundary"})
             end
             -- everything *before* the first mime boundary can be ignored
             if idx ~= 1 then
                 -- everything *before* the first mime boundary can be ignored.. only if it is not too long
                 if idx > 32 then
-                    error("too many garbage before the first mime boundary: " .. idx)
+                    error({msg = "too many garbage before the first mime boundary: " .. idx})
                 end
                 reader.consume(idx-1)
             end
         else
             if idx == nil then
-                error("error finding mime boundary")
+                error({msg = "can't find mime boundary"})
             elseif idx ~= 1 then
                 -- parsePart() should have read to the end, therefore, when we call indexOf, it should always be 1
-                error("data does not start with the mime boundary, this should be a program bug")
+                error({msg = "data does not start with the mime boundary, this should be a program bug"})
             end
         end
 
@@ -107,7 +107,7 @@ function MultiPart:parseFile(filename)
         -- the only case that item is nil is EoF
         if not item then break end
 
-        if params[item.name] then error("duplicate parameter name") end
+        if params[item.name] then error({msg = "duplicate parameter name: " .. item.name}) end
 
         if item.isFile then
             params[item.name] = {filename = item.filename, size = item.filesize, contentType = item.contentType}
@@ -123,15 +123,15 @@ function MultiPart:parsePart()
     self.reader:load(1024) -- make sure there is enough data
     local afterBoundary = self.reader:readLine()
     if afterBoundary:len() >= 2 and afterBoundary:sub(1, 3) == "--" then return nil end
-    if not afterBoundary or trim(afterBoundary):len() ~= 0 then error("no empty line following the boundary") end
+    if not afterBoundary or trim(afterBoundary):len() ~= 0 then error({msg = "no empty line following the boundary"}) end
     local item = {}
     local headers = {}
     local maxHeaders = 8
     for i=1,maxHeaders do
-        if i == maxHeaders then error("too many content headers") end
+        if i == maxHeaders then error({msg = "too many content headers"}) end
         self.reader:load(1024) -- make sure there is enough data
         local line = self.reader:readLine()
-        if not line then error("immature end of data") end
+        if not line then error({msg = "immature end of data"}) end
         line = trim(line)
         if line:len() == 0 then
             -- empty line, header is done, read body
@@ -140,16 +140,16 @@ function MultiPart:parsePart()
                 item.isFile = false
                 self.reader:load(1024*8) -- max body size is 8k
                 local idx = self.reader:indexOf(self.boundary2)
-                if not idx then error("can't find end-of-boundary") end
+                if not idx then error({msg = "can't find mime boundary"}) end
                 local value = self.reader:retrieve(idx-1)
                 local cte = item.contentTransferEncoding
                 if cte == "base64" then
                     local str, err = base64.decode(value)
-                    if err then error(err) end
+                    if err then error({msg = err}) end
                     value = str
                 elseif cte == "quoted-printable" then
                     local str, err = qp.decode(value)
-                    if err then error(err) end
+                    if err then error({msg = err}) end
                     value = str
                 end
                 item.value = value
@@ -169,7 +169,7 @@ function MultiPart:parsePart()
                 self.reader:consume(idx-1)
                 filesize = filesize + (idx-1)
                 if item.contentLength and item.contentLength ~= filesize then
-                    error("Content-length does not match the detected size using the mime boundary: " .. item.contentLength .. " != " .. filesize)
+                    error({msg = "incorrect Content-length specified: " .. item.contentLength .. " != " .. filesize})
                 end
                 item.filesize = filesize
             end
@@ -177,17 +177,17 @@ function MultiPart:parsePart()
         else
             -- parse one single header, such as "Content-Disposition", or "Content-Type", etc..
             local headerName, headerValue = line:match("^(.-)%s*%:%s*(.-)%s*$")
-            if not headerName or not headerValue then error("invalid header") end
+            if not headerName or not headerValue then error({msg = "invalid header: " .. line}) end
             headerName = headerName:lower()
-            if headers[headerName] then error("duplicate header: " .. headerName) end
+            if headers[headerName] then error({msg = "duplicate header: " .. headerName}) end
             headers[headerName] = self:parseHeaderValue(headerValue)
             if headerName == "content-disposition" then
                 if headers[headerName].value ~= "form-data" then
-                    error("content-disposition is not form-data")
+                    error({msg = "content-disposition is not form-data"})
                 end
                 item.name = headers[headerName].attributes.name
                 if not item.name then
-                    error("form-data without name")
+                    error({msg = "form-data without name"})
                 end
                 item.filename = headers[headerName].attributes.filename
             elseif headerName == "content-type" then
@@ -195,19 +195,19 @@ function MultiPart:parsePart()
             elseif headerName == "content-transfer-encoding" then
                 local cte = headers[headerName].value:lower()
                 if cte ~= "base64" and cte ~= "quoted-printable" then
-                    error("Invalid Content-Transfer-Encoding: " .. headers[headerName].value)
+                    error({msg = "invalid Content-Transfer-Encoding: " .. headers[headerName].value})
                 end
                 item.contentTransferEncoding = cte
             elseif headerName == "content-length" then
                 -- content-length should be detected by boundary, not by the Content-Length headers
                 -- in here, we still allow content-length, it's just we will double check and make sure it is correct
                 local len = tonumber(headers[headerName].value)
-                if not len then error("Invalid Content-Length specified: " .. headers[headerName].value) end
+                if not len then error({msg = "invalid Content-Length specified: " .. headers[headerName].value}) end
                 item.contentLength = len
             end
         end
     end
-    error("the program should not reach here, must be program bug")
+    error({msg = "the program should not reach here, must be program bug"})
 end
 
 function MultiPart:parseHeaderValue(value)
