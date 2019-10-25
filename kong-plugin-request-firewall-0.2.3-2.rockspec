@@ -1,5 +1,5 @@
 package = "kong-plugin-request-firewall"
-version = "0.2.3-1"
+version = "0.2.3-2"
 -- The version '0.2.3' is the source code version, the trailing '1' is the version of this rockspec.
 -- whenever the source version changes, the rockspec should be reset to 1. The rockspec version is only
 -- updated (incremented) when this file changes, but the source remains the same.
@@ -25,8 +25,13 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    ["kong.plugins.request-firewall.handler"] = "kong/plugins/request-firewall/handler.lua",
-    ["kong.plugins.request-firewall.schema"] = "kong/plugins/request-firewall/schema.lua",
-    ["kong.plugins.request-firewall.access"] = "kong/plugins/request-firewall/access.lua",
+    ["kong.plugins.request-firewall.access"]           = "kong/plugins/request-firewall/access.lua",
+    ["kong.plugins.request-firewall.base64"]           = "kong/plugins/request-firewall/base64.lua",
+    ["kong.plugins.request-firewall.file-reader"]      = "kong/plugins/request-firewall/file-reader.lua",
+    ["kong.plugins.request-firewall.handler"]          = "kong/plugins/request-firewall/handler.lua",
+    ["kong.plugins.request-firewall.multipart"]        = "kong/plugins/request-firewall/multipart.lua",
+    ["kong.plugins.request-firewall.quoted-printable"] = "kong/plugins/request-firewall/quoted-printable.lua",
+    ["kong.plugins.request-firewall.schema"]           = "kong/plugins/request-firewall/schema.lua",
+    ["kong.plugins.request-firewall.utils"]            = "kong/plugins/request-firewall/utils.lua"
   }
 }
