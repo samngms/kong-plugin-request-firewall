@@ -1,14 +1,9 @@
+local utils = require("kong.plugins.request-firewall.utils")
+
 local m = {}
 
 function m.fail(msg)
     error({msg = msg})
-    return false
-end
-
-function m.tableContains(table, value)
-    for k, v in pairs(table) do 
-        if value == v then return true end 
-    end
     return false
 end
 
@@ -30,22 +25,22 @@ function m.isValidFile(field_attrs, name, value, nested)
     end
     if field_attrs.min then
         if not value["size"] or type(value["size"]) ~= "number" or value["size"] < field_attrs.min then
-            return m.fail("File size too small: " .. name)
+            return m.fail("File size too small: " .. utils.dump({name = name, size = value["size"]}))
         end
     end
     if field_attrs.max then
         if not value["size"] or type(value["size"]) ~= "number" or value["size"] > field_attrs.max then
-            return m.fail("File size too large: " .. name)
+            return m.fail("File size too large: " .. utils.dump({name = name, size = value["size"]}))
         end
     end
     if field_attrs.match then
         if not value["filename"] or type(value["filename"]) ~= "string" or not value["filename"]:match(field_attrs.match) then
-            return m.fail("Invalid filename: " .. name)
+            return m.fail("Invalid filename: " .. utils.dump({name = name, filename = value["filename"]}))
         end
     end
     if field_attrs.not_match then
         if not value["filename"] or type(value["filename"]) ~= "string" or value["filename"]:match(field_attrs.not_match) then
-            return m.fail("Invalid filename: " .. name)
+            return m.fail("Invalid filename: " .. utils.dump({name = name, filename = value["filename"]}))
         end
     end
     return true
@@ -60,31 +55,31 @@ end
 function m.isValidBoolean(field_attrs, name, value, nested)
     if type(value) == "boolean" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid boolean[]: " .. name)
+            return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "string" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid boolean[]: " .. name)
+            return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         end
         local v = value:lower()
         if v ~= "true" and v ~= "false" and v ~= "0" and v ~= "1" then
-            return m.fail("Invalid boolean: " .. name)
+            return m.fail("Invalid boolean: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "number" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid boolean[]: " .. name)
+            return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         end
         if value ~= 0 and value ~= 1 then
-            return m.fail("Invalid boolean: " .. name)
+            return m.fail("Invalid boolean: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "table" then
         if nested then
-            return m.fail("Invalid boolean[]: " .. name)
+            return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         elseif field_attrs.is_array == 0 then
-            return m.fail("Invalid boolean: " .. name)
+            return m.fail("Invalid boolean: " .. utils.dump(name, value))
         end
         for idx, v in pairs(value) do
             if type(idx) ~= "number" or
@@ -94,7 +89,7 @@ function m.isValidBoolean(field_attrs, name, value, nested)
         end
         return true
     else
-        return m.fail("Invalid boolean: " .. name)
+        return m.fail("Invalid boolean: " .. utils.dump(name, value))
     end
 end
 
@@ -107,7 +102,7 @@ end
 function m.isValidString(field_attrs, name, value, nested)
     if type(value) == "string" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid string[]: " .. name)
+            return m.fail("Invalid string[]: " .. utils.dump(name, value))
         end
         if field_attrs.min or field_attrs.required then
             local s = m.trim(value)
@@ -115,27 +110,27 @@ function m.isValidString(field_attrs, name, value, nested)
             -- min is minimum string length, it won't be negative anyway
             if field_attrs.min then min = field_attrs.min end
             if not s or s:len() < min then
-                return m.fail("String too short: " .. name)
+                return m.fail("String too short: " .. utils.dump(name, value))
             end
         end
         if field_attrs.max and value:len() > field_attrs.max then
-            return m.fail("String too long: " .. name)
+            return m.fail("String too long: " .. utils.dump(name, value))
         end
         if field_attrs.match and not value:match(field_attrs.match) then
-            return m.fail("Invalid string content: " .. name)
+            return m.fail("Invalid string content: " .. utils.dump(name, value))
         end
         if field_attrs.not_match and value:match(field_attrs.not_match) then
-            return m.fail("Invalid string content: " .. name)
+            return m.fail("Invalid string content: " .. utils.dump(name, value))
         end
-        if field_attrs.enum and not m.tableContains(field_attrs.enum, value) then
-            return m.fail("Invalid string content: " .. name)
+        if field_attrs.enum and not utils.contains(field_attrs.enum, value) then
+            return m.fail("Invalid string enum: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "table" then
         if nested then
-            return m.fail("Invalid string[]: " .. name)
+            return m.fail("Invalid string[]: " .. utils.dump(name, value))
         elseif field_attrs.is_array == 0 then
-            return m.fail("Invalid string: " .. name)
+            return m.fail("Invalid string: " .. utils.dump(name, value))
         end
         for idx, v in pairs(value) do
             if type(idx) ~= "number" or
@@ -145,7 +140,7 @@ function m.isValidString(field_attrs, name, value, nested)
         end
         return true
     else
-        return m.fail("Invalid string: " .. name)
+        return m.fail("Invalid string: " .. utils.dump(name, value))
     end
 end
 
@@ -186,61 +181,61 @@ end
 function m.isValidNumber(field_attrs, name, value, nested)
     if type(value) == "number" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid number[]: " .. name)
+            return m.fail("Invalid number[]: " .. utils.dump(name, value))
         end
         -- if it is already a number, we will ignore the precision checking
         -- if both positive and min are not given, we will assume you want positive number only
         if ((nil == field_attrs.positive and nil == field_attrs.min) or
             field_attrs.positive) and value <= 0 then
-            return m.fail("Number is not larger than zero: " .. name)
+            return m.fail("Number is not larger than zero: " .. utils.dump(name, value))
         end
         if field_attrs.min and field_attrs.min > value then
-            return m.fail("Number too small: " .. name)
+            return m.fail("Number too small: " .. utils.dump(name, value))
         end
         if field_attrs.max and field_attrs.max < value then
-            return m.fail("Number too large: " .. name)
+            return m.fail("Number too large: " .. utils.dump(name, value))
         end
         -- note, field_attrs.enum is a string array, need to convert value into a string, otherwise tableContains() will never match
         if field_attrs.enum and
-            not m.tableContains(field_attrs.enum, tostring(value)) then
-            return m.fail("Unexpected number value: " .. name)
+            not utils.contains(field_attrs.enum, tostring(value)) then
+            return m.fail("Invalid number enum: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "string" then
         if not nested and field_attrs.is_array == 1 then
-            return m.fail("Invalid number[]: " .. name)
+            return m.fail("Invalid number[]: " .. utils.dump(name, value))
         end
         -- value is a string, good :)
         -- we always call splitDecimal, if it is not \d+(.\d+)? , splitDecimal returns nil
         local numPart, decPart = m.splitDecimal(value, false)
-        if not numPart then return m.fail("Invalid number: " .. name) end
+        if not numPart then return m.fail("Invalid number: " .. utils.dump(name, value)) end
         if field_attrs.precision and decPart and string.len(decPart) >
             field_attrs.precision then
-            return m.fail("Number with invalid precision: " .. name)
+            return m.fail("Invalid number precision: " .. utils.dump(name, value))
         end
         local v2 = tonumber(value)
         -- positive default is true for number type
         -- if both positive and min are not given, we will assume you want positive number only
         if ((nil == field_attrs.positive and nil == field_attrs.min) or
             field_attrs.positive) and v2 <= 0 then
-            return m.fail("Number is not larger than zero: " .. name)
+            return m.fail("Number is not larger than zero: " .. utils.dump(name, value))
         end
         if field_attrs.min and field_attrs.min > v2 then
-            return m.fail("Number too small: " .. name)
+            return m.fail("Number too small: " .. utils.dump(name, value))
         end
         if field_attrs.max and field_attrs.max < v2 then
-            return m.fail("Number too large: " .. name)
+            return m.fail("Number too large: " .. utils.dump(name, value))
         end
         -- note in there, we call tableContains() with "value" instead of "v2", becaues the enum is string type
-        if field_attrs.enum and not m.tableContains(field_attrs.enum, value) then
-            return m.fail("Unexpected number value: " .. name)
+        if field_attrs.enum and not utils.contains(field_attrs.enum, value) then
+            return m.fail("Invalid number: " .. utils.dump(name, value))
         end
         return true
     elseif type(value) == "table" then
         if nested then
-            return m.fail("Invalid number[]: " .. name)
+            return m.fail("Invalid number[]: " .. utils.dump(name, value))
         elseif field_attrs.is_array == 0 then
-            return m.fail("Invalid number: " .. name)
+            return m.fail("Invalid number: " .. utils.dump(name, value))
         end
         for idx, v in pairs(value) do
             if type(idx) ~= "number" or
@@ -250,7 +245,7 @@ function m.isValidNumber(field_attrs, name, value, nested)
         end
         return true
     else
-        return m.fail("Invalid number: " .. name)
+        return m.fail("Invalid number: " .. utils.dump(name, value))
     end
 end
 
@@ -280,8 +275,7 @@ function m.validateField(config, field_attrs, name, value)
         end
         local custom_class = custom_classes[type_name]
         if nil == custom_class then
-            return m.fail("custom_classes not found: " .. type_name ..
-                            ". This is config error.")
+            return m.fail("custom_classes not found: " .. type_name ..". This is config error.")
         end
         -- TODO we don't really know if nested_value is a table or an array
         if not m.validateTable(config, custom_class, name, value) then
@@ -295,7 +289,7 @@ function m.validateTable(config, schema, table_name, params)
     -- get the params and check against the schema
     for name, value in pairs(params) do
         if nil == schema then
-            return m.fail("Unexpected parameters in " .. table_name .. "." .. name)
+            return m.fail("Unexpected parameter(s) in " .. table_name .. "." .. name)
         end
         local field_attrs = schema[name]
         local b = m.validateField(config, field_attrs, table_name .. "." .. name, value)

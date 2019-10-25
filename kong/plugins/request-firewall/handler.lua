@@ -11,6 +11,7 @@ local plugin = require("kong.plugins.base_plugin"):extend()
 local MultiPart = require("kong.plugins.request-firewall.multipart")
 
 local m = require("kong.plugins.request-firewall.access")
+local utils = require("kong.plugins.request-firewall.utils")
 
 -- constructor
 function plugin:new()
@@ -46,41 +47,65 @@ local function wrapped(cfg)
     m.validateTable(cfg, cfg.body, "body", body) 
 end
 
+local function returnError(config, err, code)
+  local debug = config.debug
+  local err_code = code or config.err_code or 400
+
+  if debug then
+    if nil == err then
+      kong.response.exit(err_code)
+    elseif type(err) == 'table' and err.msg then
+      -- if err.msg is avaiable, we use it
+      kong.log.info(err.msg)
+      kong.response.exit(err_code, err.msg)
+    else
+      -- no err.msg, we output the whole err
+      kong.log.info(err)
+      kong.response.exit(err_code, err)
+    end
+  else
+    -- not in debug mode, we still want to log the error message
+    if nil == err then
+      -- can't log anything...
+    elseif type(err) == 'table' and err.msg then 
+      kong.log.info(err.msg)
+    else
+      kong.log.info(err)
+    end
+    kong.response.exit(err_code)
+  end
+end
+
 function plugin:access(config)
   plugin.super.access(self)
-
-  local debug = config.debug
-  local err_code = config.err_code or 400
 
   -- get per url config object
   local path = kong.request.get_path()
   local cfg = config.exact_match and config.exact_match[path]
   if nil == cfg then
-    kong.response.exit(403)
+    returnError(config, "Kong cfg for the URL is not found", 404)
     return
+  end
+
+  if nil ~= cfg.method and not utils.contains(cfg.method, kong.request.get_method()) then
+    returnError(config, "Method not allowed")
+    return
+  end
+
+  if nil ~= cfg.content_type then 
+    local ct = kong.request.get_header("Content-Type")
+    if nil == ct then
+      returnError(config, "Content-Type cannot be null")
+      return
+    elseif nil == string.find(ct, cfg.content_type, 1, true) then
+      returnError(config, "Content-Type not match: " .. ct)
+      return
+    end
   end
 
   local status, err = pcall(function() wrapped(cfg) end)
   if not status then 
-    if debug then
-      if err.msg then
-        kong.log.info(err.msg)
-        kong.response.exit(err_code, err.msg)
-        return
-      else
-        kong.log.info(err)
-        kong.response.exit(err_code, err)
-        return
-      end
-    else
-      if err.msg then 
-        kong.log.info(err.msg)
-      else
-        kong.log.info(err)
-      end
-      kong.response.exit(err_code)
-      return
-    end
+    returnError(config, err)
   end
 
 end
