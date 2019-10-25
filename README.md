@@ -1,19 +1,33 @@
 # Validations
 
-Per each url path, and for each parameter, you can specify a set of validation criteria
+There are two global config parameters
 
-| Criterion | Criterion's type | Decription |
-|-----------|:-----------------|:-----------|
-`type` | `strig` | it is usually `string\|number\|boolean`, but it can also be a custom type
+| Parameter | Parameter Type | Description |
+|-----------|:---------------|:------------|
+| `debug` | `boolean` | if true, will return rejection reason in HTTP response body |
+| `err_code` | `number` | if set, rejected requests will be in this code, otherwise, rejected requets will be HTTP 400 |
+
+Per each url path, you can specify two criteria
+
+| Criterion | Criterion's type | Description |
+|-----------|:-----------------|:------------|
+| `method` | `string[]`  | e.g. `["GET", "POST"]`, only specified HTTP method will be allowed, allows any method is not specified |
+| `content_type` | `string` | e.g. `application/x-www-url-form-encoded`, will be called as `string.find(request.get_header("Content-Type"), <this_value>, 1, true)` |
+
+Per each parameter, you can specify a set of validation criteria
+
+| Criterion | Criterion's type | Description |
+|-----------|:-----------------|:------------|
+`type` | `strig` | it is usually `string\|number\|boolean\|file`, but it can also be a custom type
 `is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
 `required` | `boolean` | whether the parameter is required, otherwise, it is optional
 `precision` | `number` | only applicable when `type=number`, the number of decimal number place.
 `positive` | `boolean` | only applicable when `type=number`, if ture, the number has to be larger than zero (cannot be zero)
-`min` | `number` | `type=number` this is the minimum value (inclusive), `type=string` this is the minimum string length (inclusive)
-`max` | `number` | `type=number` this is the maximum value (inclusive), `type=string` this is the maximum string length (inclusive)
-`match` | `string` | only applicable when `type=string`, the parameter is only valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching.
-`not_match` | `string` | only applicable when `type=string`, the parameter is *not* valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching.
-`enum` | `string[]` | enumeration type such as `["Monday", "Tuesday", "Wednesday"]` etc
+`min` | `number` | `type=number` this is the minimum value (inclusive), `type=string` this is the minimum string length (inclusive), `type=file` this is the minimum file size
+`max` | `number` | `type=number` this is the maximum value (inclusive), `type=string` this is the maximum string length (inclusive), `type=file` this is the max file size
+`match` | `string` | only applicable when `type=string|file`, the parameter is only valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching. For `type=file` this is matched against `filename`.
+`not_match` | `string` | only applicable when `type=string|file`, the parameter is *not* valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching. For `type=file` this is matched against `filename`.
+`enum` | `string[]` | only application when `type=string|number`, enumeration type such as `["Monday", "Tuesday", "Wednesday"]` etc
 
 \#1 note for `is_array`: there is no way to specify an array with 1 element in `application/x-www-form-urlencoded`, therefore you should not use `is_array=1` in query string parameters or body with `x-www-form-urlencoded`
 
@@ -96,7 +110,11 @@ Take the above `UserTx` as an example, the config will be
 
 ```js
 {
+    "debug": true,
+    "err_code": 499,
     "/foo/bar": {
+        "method" : ["GET", "POST"],
+        "content_type": "application/x-www-url-encoded",
         "query": {
             "search": {"type": "string"},
             "page": {"type": "number", "max": 100}
