@@ -29,9 +29,12 @@ local function dump(o, value)
         -- if value is not nil, then 'o' is the name
         -- we output name=value
         if nil == o then o = "(nil)" end
-        if type(value) == 'table' then
+        local t = type(value)
+        if nil == value then
+            return o .. '=(null)'
+        elseif t == 'table' then
             return o .. '=' .. dump(value)
-        elseif type(value) == 'string' then
+        elseif t == 'string' then
             return o .. '=' .. escape(value)
         else
             return o .. '=' .. tostring(value)
