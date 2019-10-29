@@ -26,7 +26,8 @@ for _, strategy in helpers.each_strategy() do
               b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
               b_match = {type = "string", match = "^sam$"},
               b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
-              b_array = {type = "string", is_array = 1}
+              b_array = {type = "string", is_array = 1},
+              b_any = {type = "string"}
             }
           }
         }
@@ -249,6 +250,21 @@ for _, strategy in helpers.each_strategy() do
           },
           -- http_proxy has problem handling table correctly
           body = "b_array=a"
+        })
+        assert.response(r).has.status(400)
+      end)
+
+      it("null string", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/x-www-form-urlencoded"
+          },
+          -- b_any without the following '=' is actually interpret as 'true'
+          -- therefore, 400 is expected
+          body = "b1=abc&b_any"
         })
         assert.response(r).has.status(400)
       end)

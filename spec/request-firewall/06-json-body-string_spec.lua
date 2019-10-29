@@ -26,7 +26,8 @@ for _, strategy in helpers.each_strategy() do
               b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
               b_match = {type = "string", match = "^sam$"},
               b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
-              b_array = {type = "string", is_array = 1}
+              b_array = {type = "string", is_array = 1},
+              b_any = {type = "string"}
             }
           }
         }
@@ -251,6 +252,21 @@ for _, strategy in helpers.each_strategy() do
           body = '{"b_array":"a"}'
         })
         assert.response(r).has.status(400)
+      end)
+
+      it("json null value", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          -- we previously have a bug about null
+          
+          body = '{"b_any": null}'
+        })
+        assert.response(r).has.status(200)
       end)
 
     end)

@@ -1,4 +1,5 @@
 local utils = require("kong.plugins.request-firewall.utils")
+local cjson = require("cjson")
 
 local m = {}
 
@@ -8,7 +9,7 @@ function m.fail(msg)
 end
 
 function m.trim(s)
-    if not s then return nil end
+    if not s or cjson.null == s then return nil end
     return s:match("^%s*(.-)%s*$")
 end
 
@@ -22,7 +23,7 @@ function m.isValidFile(field_attrs, name, value, nested)
     local t = type(value)
     if t == "boolean" or t == "string" or t == "number" then
         return m.fail("Invalid file (type=" .. t .. "): " .. name)
-    elseif nil == value then
+    elseif nil == value or cjson.null == value then
         return m.fail("Invalid file (empty mime): " .. name)
     end
     if field_attrs.min then
@@ -56,7 +57,7 @@ end
 -- @return true if a valid boolean, false if otherwise
 function m.isValidBoolean(field_attrs, name, value, nested)
     -- name without value actually means name=true
-    if type(value) == "boolean" or nil == value then
+    if type(value) == "boolean" or nil == value or cjson.null == value then
         if not nested and field_attrs.is_array == 1 then
             return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         end
@@ -105,7 +106,7 @@ end
 function m.isValidString(field_attrs, name, value, nested)
     -- if field_attrs said this is a string, and this is null
     -- we go thru the check as if it is a string, like min/required, ec...
-    if type(value) == "string" or nil == value then
+    if type(value) == "string" or nil == value or cjson.null == value then
         if not nested and field_attrs.is_array == 1 then
             return m.fail("Invalid string[]: " .. utils.dump(name, value))
         end
@@ -162,8 +163,7 @@ function m.splitDecimal(str, returnAsNumber)
     if nil ~= startIdx then
         local numPart = string.sub(str, 1, endIdx - 1)
         local decPart = string.sub(str, endIdx + 1)
-        if nil == string.match(numPart, "^-?%d+$") or nil ==
-            string.match(decPart, "^%d+$") then return nil end
+        if nil == string.match(numPart, "^-?%d+$") or nil == string.match(decPart, "^%d+$") then return nil end
         if returnAsNumber then
             return tonumber(numPart), tonumber(decPart)
         else
