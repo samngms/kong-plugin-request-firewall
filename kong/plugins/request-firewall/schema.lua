@@ -34,6 +34,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -55,6 +56,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -76,6 +78,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -105,6 +108,7 @@ return {
                     type = "record",
                     fields = {
                       { type = { type = "string", required = false, default = "string" } },
+                      { allow_null = { type = "boolean", required = false, default = true } },
                       { is_array = { type = "number", required = false, default = 0 } },
                       { required = { type = "boolean", required = false, default = false } },
                       { precision = { type = "number", required = false } },
@@ -146,6 +150,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -167,6 +172,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -188,6 +194,7 @@ return {
                   type = "record",
                   fields = {
                     { type = { type = "string", required = false, default = "string" } },
+                    { allow_null = { type = "boolean", required = false, default = true } },
                     { is_array = { type = "number", required = false, default = 0 } },
                     { required = { type = "boolean", required = false, default = false } },
                     { precision = { type = "number", required = false } },
@@ -217,6 +224,7 @@ return {
                     type = "record",
                     fields = {
                       { type = { type = "string", required = false, default = "string" } },
+                      { allow_null = { type = "boolean", required = false, default = true } },
                       { is_array = { type = "number", required = false, default = 0 } },
                       { required = { type = "boolean", required = false, default = false } },
                       { precision = { type = "number", required = false } },

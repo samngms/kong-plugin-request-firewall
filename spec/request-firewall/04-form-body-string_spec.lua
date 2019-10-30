@@ -27,7 +27,8 @@ for _, strategy in helpers.each_strategy() do
               b_match = {type = "string", match = "^sam$"},
               b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
               b_array = {type = "string", is_array = 1},
-              b_any = {type = "string"}
+              b_any = {type = "string", allow_null = true},
+              b_any2 = {type = "string", allow_null = false, min = 1}
             }
           }
         }
@@ -254,7 +255,7 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(400)
       end)
 
-      it("null string", function()
+      it("null string case 1", function()
         local r = assert(client:send {
           method = "POST",
           path = "/post",
@@ -262,9 +263,20 @@ for _, strategy in helpers.each_strategy() do
             host = "postman-echo.com",
             ["Content-type"] = "application/x-www-form-urlencoded"
           },
-          -- b_any without the following '=' is actually interpret as 'true'
-          -- therefore, 400 is expected
           body = "b1=abc&b_any"
+        })
+        assert.response(r).has.status(200)
+      end)
+
+      it("null string case 2", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/x-www-form-urlencoded"
+          },
+          body = "b1=abc&b_any2"
         })
         assert.response(r).has.status(400)
       end)

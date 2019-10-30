@@ -19,6 +19,7 @@ Per each parameter, you can specify a set of validation criteria
 | Criterion | Criterion's type | Description |
 |-----------|:-----------------|:------------|
 `type` | `strig` | it is usually `string\|number\|boolean\|file`, but it can also be a custom type
+`allow_null` | `boolean` | if this criteria is true and value is null, all other checks will be skipped 
 `is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
 `required` | `boolean` | whether the parameter is required, otherwise, it is optional
 `precision` | `number` | only applicable when `type=number`, the number of decimal number place.
@@ -29,15 +30,17 @@ Per each parameter, you can specify a set of validation criteria
 `not_match` | `string` | only applicable when `type=string|file`, the parameter is *not* valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching. For `type=file` this is matched against `filename`.
 `enum` | `string[]` | only application when `type=string|number`, enumeration type such as `["Monday", "Tuesday", "Wednesday"]` etc
 
-\#1 note for `is_array`: there is no way to specify an array with 1 element in `application/x-www-form-urlencoded`, therefore you should not use `is_array=1` in query string parameters or body with `x-www-form-urlencoded`
+\#1 note for `allow_null`: this is only for `null`, not for empty string. Moreover, while it is easy and explicit to set a value as `null`, there is not that straight forward to set a value to `null` in `x-www-url-form-encoded`. In Kong, the `x-www-url-form-encoded` will convert `a=1&b&c=3` into `{[a]=1, [b]=true, [c]=3}`. Therefore, in this plugin, if `allow_null` is true, and the value itself is `true`, then the validation will return true.
 
-\#2 note for `precision`: for JSON data type, such as `{age: 12.345678}`, the age value is automatically converted into a Lua number, which is a double. Since the precision is not accurate in this caes, it will be disabled. However, if the JSON data is `{age: "12.345678"}`, the string to number conversion is done by the plugin and the precision check will be applied accordingly.
+\#2 note for `is_array`: there is no way to specify an array with 1 element in `application/x-www-form-urlencoded`, therefore you should not use `is_array=1` in query string parameters or body with `x-www-form-urlencoded`
 
-\#3 note for `positive`: for `type=number`, and `min` is not defined, `positived=true` if not defined. 
+\#3 note for `precision`: for JSON data type, such as `{age: 12.345678}`, the age value is automatically converted into a Lua number, which is a double. Since the precision is not accurate in this caes, it will be disabled. However, if the JSON data is `{age: "12.345678"}`, the string to number conversion is done by the plugin and the precision check will be applied accordingly.
 
-\#4 note for `match` and `not_match`: these are [Lua pattern](https://www.lua.org/pil/20.2.html) matching, not regular expression pattern matching (which is much more powerful). Please also note these sub-string match, not full string matching. To do full string matching, prefix and suffix with `"^foobar$"`
+\#4 note for `positive`: for `type=number`, and `min` is not defined, `positived=true` if not defined. 
 
-\#5 note for `enum`: since the `enum` is specified as `string[]`, for `type=number`, the input parameter will be converted into `string` before matching.
+\#5 note for `match` and `not_match`: these are [Lua pattern](https://www.lua.org/pil/20.2.html) matching, not regular expression pattern matching (which is much more powerful). Please also note these sub-string match, not full string matching. To do full string matching, prefix and suffix with `"^foobar$"`
+
+\#6 note for `enum`: since the `enum` is specified as `string[]`, for `type=number`, the input parameter will be converted into `string` before matching.
 
 # Custom Type
 

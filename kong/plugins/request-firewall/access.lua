@@ -20,11 +20,25 @@ end
 -- @params nested false on the first call, true on nested call
 -- @return true if a valid boolean, false if otherwise
 function m.isValidFile(field_attrs, name, value, nested)
+    if value == cjson.null then value = nil end
+    if nil == value then
+        if field_attrs.allow_null then
+            return true
+        else
+            -- if "min" or "match" is defined, we fail this
+            -- otherwise, we consider it ok
+            if field_attrs.min then
+                return m.fail("File size too small: " .. utils.dump({name = name, size = "(null)"}))
+            elseif field_attrs.match then
+                return m.fail("Invalid filename: " .. utils.dump({name = name, filename = "(null)"}))
+            else
+                return true
+            end
+        end
+    end
     local t = type(value)
     if t == "boolean" or t == "string" or t == "number" then
         return m.fail("Invalid file (type=" .. t .. "): " .. name)
-    elseif nil == value or cjson.null == value then
-        return m.fail("Invalid file (empty mime): " .. name)
     end
     if field_attrs.min then
         if not value["size"] or type(value["size"]) ~= "number" or value["size"] < field_attrs.min then
@@ -56,8 +70,18 @@ end
 -- @params nested false on the first call, true on nested call
 -- @return true if a valid boolean, false if otherwise
 function m.isValidBoolean(field_attrs, name, value, nested)
-    -- name without value actually means name=true
-    if type(value) == "boolean" or nil == value or cjson.null == value then
+    if value == cjson.null then value = nil end
+    if nil == value then
+        if field_attrs.null then
+            return true
+        else
+            if not nested and field_attrs.is_array == 1 then
+                return m.fail("Invalid boolean[]: " .. utils.dump(name, "(null)"))
+            else
+                return m.fail("Invalid boolean: " .. utils.dump(name, "(null)"))
+            end
+        end
+    elseif type(value) == "boolean" then
         if not nested and field_attrs.is_array == 1 then
             return m.fail("Invalid boolean[]: " .. utils.dump(name, value))
         end
@@ -104,9 +128,25 @@ end
 -- @params nested false on the first call, true on nested call
 -- @return true if a valid string, false if otherwise
 function m.isValidString(field_attrs, name, value, nested)
-    -- if field_attrs said this is a string, and this is null
-    -- we go thru the check as if it is a string, like min/required, ec...
-    if type(value) == "string" or nil == value or cjson.null == value then
+    if value == cjson.null then value = nil end
+    -- "a=1&b&c=3" can be converted int "{a:1, b:true, c:3}"
+    if nil == value or true == value then
+        if field_attrs.allow_null then
+            return true
+        else
+            if not nested and field_attrs.is_array == 1 then
+                return m.fail("Invalid string[]: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.min and field_attrs.min > 0 then
+                return m.fail("String too short: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.match then
+                return m.fail("Invalid string match: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.enum then
+                return m.fail("Invalid string enum: " .. utils.dump(name, "(null)"))
+            else
+                return true
+            end
+        end
+    elseif type(value) == "string" or nil == value then
         if not nested and field_attrs.is_array == 1 then
             return m.fail("Invalid string[]: " .. utils.dump(name, value))
         end
@@ -125,10 +165,10 @@ function m.isValidString(field_attrs, name, value, nested)
         -- if value is not required, but a match is defined, what should we do?
         -- we allow it, otherwise you should specify required=true
         if field_attrs.match and value and not value:match(field_attrs.match) then
-            return m.fail("Invalid string content: " .. utils.dump(name, value))
+            return m.fail("Invalid string match: " .. utils.dump(name, value))
         end
         if field_attrs.not_match and value and value:match(field_attrs.not_match) then
-            return m.fail("Invalid string content: " .. utils.dump(name, value))
+            return m.fail("Invalid string non_match: " .. utils.dump(name, value))
         end
         if field_attrs.enum and value and not utils.contains(field_attrs.enum, value) then
             return m.fail("Invalid string enum: " .. utils.dump(name, value))
@@ -186,7 +226,27 @@ end
 -- @params nested false on the first call, true on nested call
 -- @return true if a valid number, false if otherwise
 function m.isValidNumber(field_attrs, name, value, nested)
-    if type(value) == "number" then
+    if value == cjson.null then value = nil end
+    -- "a=1&b&c=3" can be converted int "{a:1, b:true, c:3}"
+    if nil == value or true == value then
+        if field_attrs.allow_null then
+            return true
+        else
+            if not nested and field_attrs.is_array == 1 then
+                return m.fail("Invalid number[]: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.positive then
+                return m.fail("Number is not larger than zero: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.min then
+                return m.fail("Number too small: " .. utils.dump(name, "(null)"))
+            elseif field_attrs.enum then
+                return m.fail("Invalid number enum: " .. utils.dump(name, "(null)"))
+            else
+                return true
+            end
+        end
+    elseif value ~= value then
+        return m.fail("Invalid number: " .. utils.dump(name, "NaN"))
+    elseif type(value) == "number" then
         if not nested and field_attrs.is_array == 1 then
             return m.fail("Invalid number[]: " .. utils.dump(name, value))
         end
