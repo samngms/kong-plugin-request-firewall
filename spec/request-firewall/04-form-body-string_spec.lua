@@ -281,6 +281,19 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(400)
       end)
 
+      it("empty string case", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/x-www-form-urlencoded"
+          },
+          body = "b_any="
+        })
+        assert.response(r).has.status(200)
+      end)
+
     end)
 
   end)
