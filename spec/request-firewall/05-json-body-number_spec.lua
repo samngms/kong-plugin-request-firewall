@@ -28,6 +28,8 @@ for _, strategy in helpers.each_strategy() do
               n2 = {type = "number", positive = false, max = 100},
               n3 = {type = "number", is_array = 2, max = 100},
               n4 = {type = "number", is_array = 2, enum = {"10", "100", "1000"}},
+              n5 = {type = "number", allow_null = false },
+              n6 = {type = "number", allow_null = true },
             }
           }
         }
@@ -250,6 +252,48 @@ for _, strategy in helpers.each_strategy() do
           body = '{"n4":[100,99]}'
         })
         assert.response(r).has.status(400)
+      end)
+
+      it("block request for null value when allow_null = false", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          -- we previously have a bug about null
+          body = '{"n5": null}'
+        })
+        assert.response(r).has.status(400)
+      end)
+
+      it("pass request for null value when allow_null = true", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          -- we previously have a bug about null
+          body = '{"n6": null}'
+        })
+        assert.response(r).has.status(200)
+      end)
+
+      it("pass request for empty value", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          -- we previously have a bug about null
+          body = '{"n6": ""}'
+        })
+        assert.response(r).has.status(200)
       end)
 
     end)
