@@ -28,8 +28,9 @@ for _, strategy in helpers.each_strategy() do
               b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
               b_array = {type = "string", is_array = 1},
               b_any = {type = "string"},
-              b_any2 = {type = "string", allow_null = false, is_array = 1 },
-              b_null = {type = "string", allow_null = true }
+              b_any2 = {type = "string", is_array = 1 },
+              b_null = {type = "string", allow_null = false },
+              b_null2 = {type = "string", allow_null = true }
             }
           }
         }
@@ -256,7 +257,7 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(400)
       end)
 
-      it("json null value case 1", function()
+      it("block request for null value when allow_null = false", function()
         local r = assert(client:send {
           method = "POST",
           path = "/post",
@@ -265,26 +266,12 @@ for _, strategy in helpers.each_strategy() do
             ["Content-type"] = "application/json"
           },
           -- we previously have a bug about null
-          body = '{"b_any": null}'
-        })
-        assert.response(r).has.status(200)
-      end)
-
-      it("json null value case 2", function()
-        local r = assert(client:send {
-          method = "POST",
-          path = "/post",
-          headers = {
-            host = "postman-echo.com",
-            ["Content-type"] = "application/json"
-          },
-          -- we previously have a bug about null
-          body = '{"b_any2": null}'
+          body = '{"b_null": null}'
         })
         assert.response(r).has.status(400)
       end)
 
-      it("json empty value case", function()
+      it("allow request for null value when allow_null = true", function()
         local r = assert(client:send {
           method = "POST",
           path = "/post",
@@ -293,7 +280,21 @@ for _, strategy in helpers.each_strategy() do
             ["Content-type"] = "application/json"
           },
           -- we previously have a bug about null
-          body = '{"b_null": ""}'
+          body = '{"b_null2": null}'
+        })
+        assert.response(r).has.status(200)
+      end)
+
+      it("allow request for empty value when allow_null = false", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          -- we previously have a bug about null
+          body = '{"b_null2": ""}'
         })
         assert.response(r).has.status(200)
       end)

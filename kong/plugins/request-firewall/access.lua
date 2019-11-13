@@ -22,8 +22,8 @@ end
 function m.isValidFile(field_attrs, name, value, nested)
     if value == cjson.null then value = nil end
     if nil == value then
-        if field_attrs.allow_null then
-            return true
+        if field_attrs.allow_null == false then
+            return m.fail("Null and empty filename is NOT ALLOWED: " .. utils.dump({name = name, filename = "(null)"}))
         else
             -- if "min" or "match" is defined, we fail this
             -- otherwise, we consider it ok
@@ -131,8 +131,8 @@ function m.isValidString(field_attrs, name, value, nested)
     if value == cjson.null then value = nil end
     -- "a=1&b&c=3" can be converted int "{a:1, b:true, c:3}"
     if nil == value or true == value or "" == value then
-        if field_attrs.allow_null then
-            return true
+        if field_attrs.allow_null == false then
+            return m.fail("Null and empty value is NOT ALLOWED: " .. utils.dump(name, "(null)"))
         else
             if not nested and field_attrs.is_array == 1 then
                 return m.fail("Invalid string[]: " .. utils.dump(name, "(null)"))
