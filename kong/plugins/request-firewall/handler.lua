@@ -81,6 +81,11 @@ function plugin:access(config)
 
   -- get per url config object
   local path = kong.request.get_path()
+
+  if nil ~= path then
+    path = string.gsub(path, "//", "/")
+  end
+
   local cfg = config.exact_match and config.exact_match[path]
   if nil == cfg then
     returnError(config, "Kong cfg for the URL is not found", 404)

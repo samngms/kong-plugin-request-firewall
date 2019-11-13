@@ -30,7 +30,7 @@ Per each parameter, you can specify a set of validation criteria
 `not_match` | `string` | only applicable when `type=string|file`, the parameter is *not* valid if it matches this pattern. Note this is Lua pattern matching, not a regex pattern matching. For `type=file` this is matched against `filename`.
 `enum` | `string[]` | only application when `type=string|number`, enumeration type such as `["Monday", "Tuesday", "Wednesday"]` etc
 
-\#1 note for `allow_null`: this is only for `null`, not for empty string. Moreover, while it is easy and explicit to set a value as `null`, there is not that straight forward to set a value to `null` in `x-www-url-form-encoded`. In Kong, the `x-www-url-form-encoded` will convert `a=1&b&c=3` into `{[a]=1, [b]=true, [c]=3}`. Therefore, in this plugin, if `allow_null` is true, and the value itself is `true`, then the validation will return true.
+\#1 note for `allow_null`: this is for `null` and empty string for data type `string` and `number`. Moreover, while it is easy and explicit to set a value as `null`, there is not that straight forward to set a value to `null` in `x-www-url-form-encoded`. In Kong, the `x-www-url-form-encoded` will convert `a=1&b&c=3` into `{[a]=1, [b]=true, [c]=3}`. Therefore, in this plugin, if `allow_null` is true, and the value itself is `true`, then the validation will return true.
 
 \#2 note for `is_array`: there is no way to specify an array with 1 element in `application/x-www-form-urlencoded`, therefore you should not use `is_array=1` in query string parameters or body with `x-www-form-urlencoded`
 

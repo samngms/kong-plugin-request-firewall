@@ -106,6 +106,33 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(200)
       end)
 
+      it("normalize url request for // to /", function()
+        local r = assert(client:send {
+          method = "GET",
+          path = "//get",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-Type"] = "application/x-www-form-urlencoded"
+          },
+          query = "foobar=morning"
+        })
+        assert.response(r).has.status(200)
+      end)
+
+      it("normalize url request not for ///", function()
+        local r = assert(client:send {
+          method = "GET",
+          path = "///get",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-Type"] = "application/x-www-form-urlencoded"
+          },
+          query = "foobar=morning"
+        })
+        assert.response(r).has.status(404)
+      end)
+
+
       it("not allowed URL", function()
         local r = assert(client:send {
           method = "GET",
