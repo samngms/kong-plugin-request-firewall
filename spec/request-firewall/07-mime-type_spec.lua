@@ -22,19 +22,23 @@ for _, strategy in helpers.each_strategy() do
       local myconfig = {
         exact_match = {
           ["/get"] = {
-            query = {
-              q1 = {type = "string"}
-            },
-            body = {
-              b1 = {type = "string"},
+            GET = {
+              query = {
+                q1 = {type = "string"}
+              },
+              body = {
+                b1 = {type = "string"},
+              }
             }
           },
           ["/post"] = {
-            query = {
-              q1 = {type = "string"}
-            },
-            body = {
-              b1 = {type = "string"},
+            POST = {
+              query = {
+                q1 = {type = "string"}
+              },
+              body = {
+                b1 = {type = "string"},
+              }
             }
           }
         }

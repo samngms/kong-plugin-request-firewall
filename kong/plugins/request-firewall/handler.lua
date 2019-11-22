@@ -86,13 +86,14 @@ function plugin:access(config)
     path = string.gsub(path, "//", "/")
   end
 
-  local cfg = config.exact_match and config.exact_match[path]
-  if nil == cfg then
+  local url_cfg = config.exact_match and config.exact_match[path]
+  if nil == url_cfg then
     returnError(config, "Kong cfg for the URL is not found", 404)
     return
   end
 
-  if nil ~= cfg.method and not utils.contains(cfg.method, kong.request.get_method()) then
+  local cfg = url_cfg[kong.request.get_method()] or url_cfg["*"]
+  if cfg == nil then
     returnError(config, "Method not allowed")
     return
   end
@@ -109,7 +110,7 @@ function plugin:access(config)
   end
 
   local status, err = pcall(function() wrapped(cfg) end)
-  if not status then 
+  if not status then
     returnError(config, err)
   end
 

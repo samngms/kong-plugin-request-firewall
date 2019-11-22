@@ -22,24 +22,26 @@ for _, strategy in helpers.each_strategy() do
       local myconfig = {
         exact_match = {
           ["/post"] = {
-            body = {
+            POST = {
+              body = {
                 usertx = {type = "UserTx"},
                 timestamp = {type = "number", required = true}
-            },
-            custom_classes = {
+              },
+              custom_classes = {
                 UserClass = {
-                    uid = {type = "number", required = true, max = 1000000},
-                    roles = {type = "string", is_array = 1, min = 1, max = 32}
+                  uid = {type = "number", required = true, max = 1000000},
+                  roles = {type = "string", is_array = 1, min = 1, max = 32}
                 },
                 Transaction = {
-                    to = {type = "string", min = 1, max = 100},
-                    amount = {type = "number", max = 1000000}
-                }, 
+                  to = {type = "string", min = 1, max = 100},
+                  amount = {type = "number", max = 1000000}
+                },
                 UserTx = {
-                    user = {type = "UserClass", required = true},
-                    transaction = {type = "Transaction"}
+                  user = {type = "UserClass", required = true},
+                  transaction = {type = "Transaction"}
                 }
-            }    
+              }
+            }
           }
         }
       }
