@@ -22,13 +22,15 @@ for _, strategy in helpers.each_strategy() do
       local myconfig = {
         exact_match = {
           ["/post"] = {
-            body = {
-              b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
-              b_match = {type = "string", match = "^sam$"},
-              b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
-              b_array = {type = "string", is_array = 1},
-              b_any = {type = "string", allow_null = true},
-              b_any2 = {type = "string", allow_null = false, min = 1}
+            POST = {
+              body = {
+                b1 = {type = "string", min = 2, max = 5, not_match = "%p"},
+                b_match = {type = "string", match = "^sam$"},
+                b_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
+                b_array = {type = "string", is_array = 1},
+                b_any = {type = "string", allow_null = true},
+                b_any2 = {type = "string", allow_null = false, min = 1}
+              }
             }
           }
         }

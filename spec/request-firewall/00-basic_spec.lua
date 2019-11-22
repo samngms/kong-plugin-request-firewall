@@ -24,10 +24,19 @@ for _, strategy in helpers.each_strategy() do
         err_code = 488,
         exact_match = {
           ["/get"] = {
-            method = {"GET"},
-            content_type = "application/x-www-form-urlencoded",
-            query = {
-              foobar = {type = "string"}
+            GET = {
+                content_type = "application/x-www-form-urlencoded",
+                query = {
+                  foobar = {type = "string"}
+                }
+            }
+          },
+          ["/post"] = {
+            ["*"] = {
+              content_type = "application/x-www-form-urlencoded",
+              body = {
+                foobar = {type = "string"}
+              }
             }
           }
         }
@@ -146,10 +155,23 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(404)
       end)
 
+      it("allowed method for defined method '*'", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/post",
+          headers = {
+            host = "postman-echo.com",
+            ["Content-Type"] = "application/x-www-form-urlencoded"
+          },
+          body = "foobar=morning"
+        })
+        assert.response(r).has.status(200)
+      end)
+
       it("not allowed method", function()
         local r = assert(client:send {
           method = "POST",
-          path = "/get", 
+          path = "/get",
           headers = {
             host = "postman-echo.com",
             ["Content-Type"] = "application/x-www-form-urlencoded"

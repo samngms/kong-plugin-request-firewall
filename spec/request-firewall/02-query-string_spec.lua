@@ -22,11 +22,13 @@ for _, strategy in helpers.each_strategy() do
       local myconfig = {
         exact_match = {
           ["/get"] = {
-            query = {
-              q1 = {type = "string", min = 2, max = 5, not_match = "%p"},
-              q_match = {type = "string", match = "^sam$"},
-              q_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
-              q_array = {type = "string", is_array = 1}
+            GET = {
+              query = {
+                q1 = {type = "string", min = 2, max = 5, not_match = "%p"},
+                q_match = {type = "string", match = "^sam$"},
+                q_enum = {type = "string", is_array = 2, enum = {"Monday", "WednesdayTuesday", "Wednesday"}},
+                q_array = {type = "string", is_array = 1}
+              }
             }
           }
         }

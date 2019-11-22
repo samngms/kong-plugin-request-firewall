@@ -7,18 +7,19 @@ There are two global config parameters
 | `debug` | `boolean` | if true, will return rejection reason in HTTP response body |
 | `err_code` | `number` | if set, rejected requests will be in this code, otherwise, rejected requets will be HTTP 400 |
 
-Per each url path, you can specify two criteria
+Per each url path, the HTTP request method should be defined
+
+Per each HTTP request method in the url path, you can specify the content_type 
 
 | Criterion | Criterion's type | Description |
 |-----------|:-----------------|:------------|
-| `method` | `string[]`  | e.g. `["GET", "POST"]`, only specified HTTP method will be allowed, allows any method is not specified |
 | `content_type` | `string` | e.g. `application/x-www-url-form-encoded`, will be called as `string.find(request.get_header("Content-Type"), <this_value>, 1, true)` |
 
 Per each parameter, you can specify a set of validation criteria
 
 | Criterion | Criterion's type | Description |
 |-----------|:-----------------|:------------|
-`type` | `strig` | it is usually `string\|number\|boolean\|file`, but it can also be a custom type
+`type` | `string` | it is usually `string\|number\|boolean\|file`, but it can also be a custom type
 `allow_null` | `boolean` | if this criteria is true and value is null, all other checks will be skipped 
 `is_array` | `number` | `0` means not an array, `1` means must be an array, `2` means _can_ be an array
 `required` | `boolean` | whether the parameter is required, otherwise, it is optional
@@ -103,8 +104,13 @@ There are two types of paths in the config, `exact_match` and `pattern_match`
     }
 }
 ```
+And for each path, the HTTP request method should be defined as the key of object.
 
-And for each path, the configuration contains the following sections
+HTTP request method "*" is for applying the rules for any HTTP request methods in that path.
+
+This case will be illustrated at following example  
+
+For each HTTP request method in the path, the configuration contains the following sections
 1. query
 2. body
 3. custom_classes
@@ -116,30 +122,30 @@ Take the above `UserTx` as an example, the config will be
     "debug": true,
     "err_code": 499,
     "/foo/bar": {
-        "method" : ["GET", "POST"],
-        "content_type": "application/x-www-url-encoded",
-        "query": {
-            "search": {"type": "string"},
-            "page": {"type": "number", "max": 100}
-        },
-        "body": {
-            "usertx": {"type": "UserTx"},
-            "timestamp": {"type": "number"}
-        },
-        "custom_classes": {
-            "UserClass": {
-                "uid": {"type": "number", "max": 1000000},
-                "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
+        "*": {
+            "query":{
+                "search": {"type": "string"},
+                "page": {"type": "number", "max": 100}
             },
-            "Transaction": {
-                "to": {"type": "string", "min": 1, "max": 100},
-                "amount": {"type": "number", "max": 1000000}
+            "body": {
+                "usertx": {"type": "UserTx"},
+                "timestamp": {"type": "number"}
             },
-            "UserTx": {
-                "user": {"type": "UserClass"},
-                "transaction": {"type": "Transaction"}
-            }
-        }    
+            "custom_classes": {
+                "UserClass": {
+                    "uid": {"type": "number", "max": 1000000},
+                    "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
+                },
+                "Transaction": {
+                    "to": {"type": "string", "min": 1, "max": 100},
+                    "amount": {"type": "number", "max": 1000000}
+                },
+                "UserTx": {
+                    "user": {"type": "UserClass"},
+                    "transaction": {"type": "Transaction"}
+                }
+            }   
+        } 
     }
 }
 ```

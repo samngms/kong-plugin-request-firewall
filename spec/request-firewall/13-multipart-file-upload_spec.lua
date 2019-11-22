@@ -22,10 +22,12 @@ for _, strategy in helpers.each_strategy() do
       local myconfig = {
         exact_match = {
           ["/post"] = {
-            body = {
+            POST = {
+              body = {
                 text1 = {type = "string", match = "^%a+$"},
                 file2 = {type = "file" },
                 text2 = {type = "string"}
+              }
             }
           }
         }
