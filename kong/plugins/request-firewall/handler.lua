@@ -21,7 +21,7 @@ end
 local function wrapped(cfg) 
     -- check query params
     local query = kong.request.get_query()
-    m.validateTable(cfg, cfg.query, "query", query)
+    m.validateTable(cfg, cfg.query, cfg.allow_unknown_query, "query", query)
   
     -- check body params, this includes JSON, x-www-url-encoded and multi-part etc..
     local contentType = kong.request.get_header("Content-Type")
@@ -44,7 +44,7 @@ local function wrapped(cfg)
   
     if nil == body then body = {} end
   
-    m.validateTable(cfg, cfg.body, "body", body) 
+    m.validateTable(cfg, cfg.body, cfg.allow_unknown_body, "body", body) 
 end
 
 local function returnError(config, err, code)

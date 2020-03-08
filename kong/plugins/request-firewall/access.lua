@@ -319,22 +319,31 @@ function m.validateField(config, field_attrs, name, value)
             return m.fail("custom_classes not found: " .. type_name ..". This is config error.")
         end
         -- TODO we don't really know if nested_value is a table or an array
-        if not m.validateTable(config, custom_class, name, value) then
+        if not m.validateTable(config, custom_class, false, name, value) then
             return false
         end
         return true
     end
 end
 
-function m.validateTable(config, schema, table_name, params)
+function m.validateTable(config, schema, allow_unknown, table_name, params)
     -- get the params and check against the schema
     for name, value in pairs(params) do
         if nil == schema then
-            return m.fail("Unexpected parameter(s) in " .. table_name .. "." .. name)
+            if not allow_unknown then
+                return m.fail("Unexpected parameter(s) in " .. table_name .. "." .. name)
+            end
+        else
+            local field_attrs = schema[name]
+            if nil == field_attrs then
+                if not allow_unknown then
+                    return m.fail("Unexpected parameter in " .. table_name .. ": " .. name) 
+                end
+            else
+                local b = m.validateField(config, field_attrs, table_name .. "." .. name, value)
+                if not b then return false end
+            end
         end
-        local field_attrs = schema[name]
-        local b = m.validateField(config, field_attrs, table_name .. "." .. name, value)
-        if not b then return false end
     end
 
     -- loop against the schema and check for required fields

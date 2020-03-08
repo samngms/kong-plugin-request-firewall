@@ -6,6 +6,8 @@ There are two global config parameters
 |-----------|:---------------|:------------|
 | `debug` | `boolean` | if true, will return rejection reason in HTTP response body |
 | `err_code` | `number` | if set, rejected requests will be in this code, otherwise, rejected requets will be HTTP 400 |
+| `exact_match` | map, key=url, value=config | if a matching url config is found, will then check against the config, the system will check `exact_match` before `pattern_match` |
+| `pattern_match` | map, key=url, value=config | while `exact_match` is performed by exact string matching, `pattern_match` allows using lua pattern matching in the url |
 
 Per each url path, the HTTP request method should be defined
 
@@ -14,6 +16,11 @@ Per each HTTP request method in the url path, you can specify the content_type
 | Criterion | Criterion's type | Description |
 |-----------|:-----------------|:------------|
 | `content_type` | `string` | e.g. `application/x-www-url-form-encoded`, will be called as `string.find(request.get_header("Content-Type"), <this_value>, 1, true)` |
+| `query` | a map, key=parameter_name, value=config (see below) | the allowed parameters in query string, if not specify, no parameter is allowed in the query string | 
+| `allow_unknown_query` | `boolean` | whether the plugin should reject the request when an unknown (or unspecified) query parameter is found, default is false | 
+| `body` | a map, key=parameter_name, value=config (see below) | the allowed parameters in request body, if not specify, no parameter is allowed in the request body | 
+| `allow_unknown_body` | `boolean` | whether the plugin should reject the request when an unknown (or unspecified) request body parameter is found, default is false | 
+| `path` | a map, key=parameter_name, value=config (see below) | the allowed parameters in "path", this is the RESTful API parameters in URL (but not as query string), only valid for `pattern_match`|
 
 Per each parameter, you can specify a set of validation criteria
 
@@ -121,31 +128,42 @@ Take the above `UserTx` as an example, the config will be
 {
     "debug": true,
     "err_code": 499,
-    "/foo/bar": {
-        "*": {
-            "query":{
-                "search": {"type": "string"},
-                "page": {"type": "number", "max": 100}
-            },
-            "body": {
-                "usertx": {"type": "UserTx"},
-                "timestamp": {"type": "number"}
-            },
-            "custom_classes": {
-                "UserClass": {
-                    "uid": {"type": "number", "max": 1000000},
-                    "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
+    "exact_match:": {
+        // 'foobar' is the path, we are inside "exact_match", so this is the exact path, without query string
+        // put it inside pattern_match if you want to use wildcard in the pattern (but not implemented yet)
+        "/foo/bar": { 
+            // can be GET/POST/etc.. use '*' to specify anything
+            // if the allowed method is not found, the request will be rejected
+            "POST": {
+                // the expact content-type, optional, a sub-string match will return true
+                "content_type": "application/x-www-url-form-encoded",
+                // this is allowed parameters in query string
+                "query":{
+                    "search": {"type": "string"},
+                    "page": {"type": "number", "max": 100}
                 },
-                "Transaction": {
-                    "to": {"type": "string", "min": 1, "max": 100},
-                    "amount": {"type": "number", "max": 1000000}
+                // this is allowed parameters in post body
+                "body": {
+                    "usertx": {"type": "UserTx"},
+                    "timestamp": {"type": "number"}
                 },
-                "UserTx": {
-                    "user": {"type": "UserClass"},
-                    "transaction": {"type": "Transaction"}
-                }
-            }   
-        } 
+                // any custom classes use in body (or query)
+                "custom_classes": {
+                    "UserClass": {
+                        "uid": {"type": "number", "max": 1000000},
+                        "roles": {"type": "string", "is_array": 1, "min": 1, "max": 32}
+                    },
+                    "Transaction": {
+                        "to": {"type": "string", "min": 1, "max": 100},
+                        "amount": {"type": "number", "max": 1000000}
+                    },
+                    "UserTx": {
+                        "user": {"type": "UserClass"},
+                        "transaction": {"type": "Transaction"}
+                    }
+                }   
+            } 
+        }
     }
 }
 ```
