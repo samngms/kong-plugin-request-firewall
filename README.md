@@ -22,6 +22,8 @@ Per each HTTP request method in the url path, you can specify the content_type
 | `allow_unknown_body` | `boolean` | whether the plugin should reject the request when an unknown (or unspecified) request body parameter is found, default is false | 
 | `path` | a map, key=parameter_name, value=config (see below) | the allowed parameters in "path", this is the RESTful API parameters in URL (but not as query string), only valid for `pattern_match`|
 
+*Note:* there is no `allow_unknown_path` because you have to specify the variable in the path, it is impossible to have unknown path variables. But if you don't specify path validations, the implicit pattern is `([^%/]+)`, which means anything but `/`
+
 Per each parameter, you can specify a set of validation criteria
 
 | Criterion | Criterion's type | Description |
@@ -49,6 +51,51 @@ Per each parameter, you can specify a set of validation criteria
 \#5 note for `match` and `not_match`: these are [Lua pattern](https://www.lua.org/pil/20.2.html) matching, not regular expression pattern matching (which is much more powerful). Please also note these sub-string match, not full string matching. To do full string matching, prefix and suffix with `"^foobar$"`
 
 \#6 note for `enum`: since the `enum` is specified as `string[]`, for `type=number`, the input parameter will be converted into `string` before matching.
+
+# Specifying Path Variables
+
+```js
+    pattern_match: {
+        // user is %a+
+        "/get_balance/${user:%a+}" {
+            "GET": {
+                path: {
+                    user:  {
+                        // this is yet another pattern match, this time with a different pattern
+                        match: "user%-%d+",
+                        min: 10,
+                        max: 15
+                    }
+                }
+            }
+        },
+        "/create/order/${user}/${id:%d+}" {
+            "POST": {
+                path: {
+                    user: {
+                        match: "%a+",
+                        max: 10
+                    },
+                    id: {
+                        type: "number",
+                        min: 10,
+                        max: 10000,
+                    }
+                },
+                body: {
+                    item_name: {
+                        match: "%a+",
+                        max: 20
+                    },
+                    quantity: {
+                        type: "number",
+                        max: 100
+                    }
+                }
+            }
+        }
+    }
+```
 
 # Custom Type
 
@@ -99,12 +146,10 @@ There are two types of paths in the config, `exact_match` and `pattern_match`
             }
         },
         pattern_match: {
-            "/get_balance/" {
-                path_pattern: "/get_balance/${user}"
+            "/get_balance/${user}": {
                 // configuration for "/get_balance/${user}
             },
-            "/create/order/" {
-                path_pattern: "/create/order/${user}/${id}"
+            "/create/order/${user}/${id}": {
                 // configration for "/create/order/${user}/${id}
             }
         }

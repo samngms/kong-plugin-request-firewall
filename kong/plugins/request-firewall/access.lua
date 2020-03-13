@@ -337,7 +337,7 @@ function m.validateTable(config, schema, allow_unknown, table_name, params)
             local field_attrs = schema[name]
             if nil == field_attrs then
                 if not allow_unknown then
-                    return m.fail("Unexpected parameter in " .. table_name .. ": " .. name) 
+                    return m.fail("Unexpected parameter in " .. table_name .. "." .. name) 
                 end
             else
                 local b = m.validateField(config, field_attrs, table_name .. "." .. name, value)

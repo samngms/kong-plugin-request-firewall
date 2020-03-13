@@ -18,7 +18,49 @@ function plugin:new()
   plugin.super.new(self, plugin_name)
 end
 
-local function wrapped(cfg) 
+local function quoteRegex(str)
+  local s, count = string.gsub(str, "-", "%%-")
+  return s
+end
+
+local function parseUrlPattern(template)
+  local list = {}
+  local offset = 1
+  local output = ""
+  while true do
+    local startIdx, endIdx = string.find(template, "${.-}", offset, false)
+    if nil == startIdx then
+      local plain = string.sub(template, offset)
+      if string.len(plain) > 0 then
+        output = output .. quoteRegex(plain)
+      end
+      break
+    else
+      local plain = string.sub(template, offset, startIdx-1)
+      if string.len(plain) > 0 then
+        output = output .. quoteRegex(plain)
+      end
+      local found = string.sub(template, startIdx+2, endIdx-1)
+      local idx = string.find(found, ":", 1, true)
+      if nil == idx then
+        table.insert(list, m.trim(found))
+        output = output .. "([^%/]+)"
+      else
+        table.insert(list, m.trim(string.sub(found, 1, idx-1)))
+        output = output .. "(" .. m.trim(string.sub(found, idx+1, -1)) .. ")"
+      end
+      offset = endIdx+1
+    end
+  end
+
+  return "^" .. output .. "$", list
+end
+
+local function wrapped(cfg, pathParams) 
+    -- check path params
+    -- there is no allow_unknown_path, because you specify the path variables in the path, there is no way to have unknown path variables
+    m.validateTable(cfg, cfg.path, true, "path", pathParams)
+
     -- check query params
     local query = kong.request.get_query()
     m.validateTable(cfg, cfg.query, cfg.allow_unknown_query, "query", query)
@@ -87,9 +129,30 @@ function plugin:access(config)
   end
 
   local url_cfg = config.exact_match and config.exact_match[path]
+  local pathParams = {}
   if nil == url_cfg then
-    returnError(config, "Kong cfg for the URL is not found", 404)
-    return
+    if nil ~= config.pattern_match then
+      for str, c in pairs(config.pattern_match) do
+        local pattern, names = parseUrlPattern(str)
+        local m = {string.match(path, pattern)}
+        if next(m) then -- that means it matches
+          -- note I loop thru names, not m because if there is no match group, then m is non-nil and contains the full string
+          -- but in that case, then names should be empty
+          for i, name in ipairs(names) do
+            -- remember to do url hex decode
+            -- https://github.com/openresty/lua-nginx-module#ngxescape_uri
+            pathParams[name] = ngx.unescape_uri(m[i])
+          end
+          url_cfg = c
+          break
+        end
+      end
+    end
+
+    if nil == url_cfg then
+      returnError(config, "Kong cfg for the URL is not found", 404)
+      return
+    end
   end
 
   local cfg = url_cfg[kong.request.get_method()] or url_cfg["*"]
@@ -109,7 +172,7 @@ function plugin:access(config)
     end
   end
 
-  local status, err = pcall(function() wrapped(cfg) end)
+  local status, err = pcall(function() wrapped(cfg, pathParams) end)
   if not status then
     returnError(config, err)
   end
