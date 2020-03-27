@@ -2,9 +2,9 @@
 
 A Versatile Request Parameter Validator for Kong API Gateway
 
-[![Build Status](https://travis-ci.org/samngms/kong-plugin-request-firewall.svg?branch=master)](https://travis-ci.org/samngms/kong-plugin-request-firewall) [![LuaRocks](./luarocks.png)](https://luarocks.org/modules/samngms/kong-plugin-request-firewall)
+[![Build Status](https://travis-ci.org/samngms/kong-plugin-request-firewall.svg?branch=master)](https://travis-ci.org/samngms/kong-plugin-request-firewall) &nbsp; [![LuaRocks](https://img.shields.io/badge/-LuaRocks-blue)](https://luarocks.org/modules/samngms/kong-plugin-request-firewall)
 
-Tested Kong Version: 1.3, 1.4
+Tested Kong Version: 1.3, 1.4, 1.5, 2.0
 
 # Validations
 
