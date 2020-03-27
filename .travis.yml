@@ -1,0 +1,19 @@
+# .travis.yml
+
+dist: bionic
+
+jobs:
+  include:
+  - name: Kong CE 1.3.x
+    env: KONG_VERSION=1.3.x
+  - name: Kong CE 1.4.x
+    env: KONG_VERSION=1.4.x
+
+install:
+- git clone --single-branch https://github.com/Kong/kong-pongo ../kong-pongo
+- "../kong-pongo/pongo.sh up"
+- "../kong-pongo/pongo.sh build"
+
+script:
+#- "../kong-pongo/pongo.sh lint"
+- "../kong-pongo/pongo.sh run --no-cassandra"

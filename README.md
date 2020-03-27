@@ -224,37 +224,14 @@ $ curl -X POST http://localhost:8001/routes/[route_id]/plugins \
 
 # Testing the plugin
 
-The plugin can only be tested in [Kong Vagrant](https://github.com/Kong/kong-vagrant) environment. 
-
-In `Kong Vagrant` README file, they mention
+The easiest way to test Kong plugin is by using [kong-pongo](https://github.com/Kong/kong-pongo)
 
 ```sh
-$ git clone https://github.com/Kong/kong-plugin
-..
-$ export KONG_PLUGINS=bundled,myplugin
+$ git clone https://github.com/Kong/kong-pongo ../kong-pongo
+$ KONG_VERSION=1.4.x ../kong-pongo/pongo.sh run -v -o gtest ./spec
 ```
 
-Change that line to 
-```sh
-$ git clone https://github.com/samngms/kong-plugin-request-firewall kong-plugin
-..
-$ export KONG_PLUGINS=bundled,kong-plugin-request-firewall
-```
-
-Note, the `export=...` is not needed unless you need to *start* the real Kong (not just run in test mode).
-
-This is needed because the Vagrant script hardcoded the path `kong-plugin`
-
-Once everything is ready, you can run the following command
-```sh
-$ vagrant up
-$ vagrant ssh
-... inside vagrant ...
-$ cd /kong
-$ bin/busted -v -o gtest /kong-plugin/spec
-```
-
-All the Kong server logs can be found in `/kong/servroot/logs`
+All the Kong server logs can be found in `./servroot/logs`
 
 # About luarocks
 
