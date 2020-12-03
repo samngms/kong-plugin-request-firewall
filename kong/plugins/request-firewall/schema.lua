@@ -94,7 +94,8 @@ return {
                       { max = { type = "number", required = false } },
                       { match = { type = "string", required = false } },
                       { not_match = { type = "string", required = false } },
-                      { enum = { type = "array", required = false, elements = { type = "string" } } }
+                      { enum = { type = "array", required = false, elements = { type = "string" } } },
+                      { graphql_match = { type = "map", required = false } }
                     }
                   }
                 }},
