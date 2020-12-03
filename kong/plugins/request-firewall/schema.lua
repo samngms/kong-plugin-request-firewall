@@ -9,6 +9,38 @@ return {
       fields = {
         { err_code = { type = "number" } },
         { debug = { type = "boolean", default = false } },
+        { graphql_endpoint = { type = "array", required = false, elements = { type = "string" } } },
+        { graphql_match = {
+          type = "map",
+          keys = {
+            -- the root element name
+            type = "string"
+          },
+          values = {
+            -- this is the class definition, itself is also a map
+            type = "map",
+            keys = {
+              -- this is the element name
+              type = "string"
+            },
+            values = {
+              type = "record",
+              fields = {
+                { type = { type = "string", required = false, default = "string" } },
+                { allow_null = { type = "boolean", required = false, default = true } },
+                { is_array = { type = "number", required = false, default = 0 } },
+                { required = { type = "boolean", required = false, default = false } },
+                { precision = { type = "number", required = false } },
+                { positive = { type = "boolean", required = false } },
+                { min = { type = "number", required = false } },
+                { max = { type = "number", required = false } },
+                { match = { type = "string", required = false } },
+                { not_match = { type = "string", required = false } },
+                { enum = { type = "array", required = false, elements = { type = "string" } } }
+              }
+            }
+          }
+        }},
         { exact_match = {
           type = "map",
           -- the key is the path of the url
@@ -94,8 +126,7 @@ return {
                       { max = { type = "number", required = false } },
                       { match = { type = "string", required = false } },
                       { not_match = { type = "string", required = false } },
-                      { enum = { type = "array", required = false, elements = { type = "string" } } },
-                      { graphql_match = { required = false, type = "map", keys = { type = "string"}, values = { type= "string"} } } }
+                      { enum = { type = "array", required = false, elements = { type = "string" } } }
                     }
                   }
                 }},
