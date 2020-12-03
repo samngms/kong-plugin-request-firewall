@@ -95,7 +95,7 @@ return {
                       { match = { type = "string", required = false } },
                       { not_match = { type = "string", required = false } },
                       { enum = { type = "array", required = false, elements = { type = "string" } } },
-                      { graphql_match = { type = "map", required = false } }
+                      { graphql_match = { required = false, type = "map", keys = { type = "string"}, values = { type= "string"} } } }
                     }
                   }
                 }},
