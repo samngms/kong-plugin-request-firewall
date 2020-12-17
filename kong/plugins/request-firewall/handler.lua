@@ -142,10 +142,18 @@ function plugin:access(config)
         if nil == g_config[rootElement][queryType] then
           returnError(config, "Query Type is not allowed")
         end
-        
+
+        for schemaField in g_config[rootElement][queryType] do
+          if schemaFields.required == true and graph:hashFields({schemaField}) then
+            returnError(config, "Missing required field")
+          end
+        end
+
         m.validateField(config, g_config[rootElement][queryType], queryType, value)
       end
     end
+    
+    
   end
    
 
