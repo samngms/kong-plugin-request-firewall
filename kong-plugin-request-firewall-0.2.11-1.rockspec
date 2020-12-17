@@ -20,6 +20,7 @@ description = {
 }
 
 dependencies = {
+  "graphql-parser >= 1.001"
 }
 
 build = {
