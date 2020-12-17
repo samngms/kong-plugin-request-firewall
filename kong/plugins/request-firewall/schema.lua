@@ -13,30 +13,38 @@ return {
         { graphql_match = {
           type = "map",
           keys = {
-            -- the root element name
+            -- the url name e.g. /graphql
             type = "string"
           },
           values = {
             -- this is the class definition, itself is also a map
             type = "map",
             keys = {
-              -- this is the element name
+              -- the root element name
               type = "string"
             },
             values = {
-              type = "record",
-              fields = {
-                { type = { type = "string", required = false, default = "string" } },
-                { allow_null = { type = "boolean", required = false, default = true } },
-                { is_array = { type = "number", required = false, default = 0 } },
-                { required = { type = "boolean", required = false, default = false } },
-                { precision = { type = "number", required = false } },
-                { positive = { type = "boolean", required = false } },
-                { min = { type = "number", required = false } },
-                { max = { type = "number", required = false } },
-                { match = { type = "string", required = false } },
-                { not_match = { type = "string", required = false } },
-                { enum = { type = "array", required = false, elements = { type = "string" } } }
+              -- this is the class definition, itself is also a map
+              type = "map",
+              keys = {
+                -- this is the query type (query|mutation|subscription)
+                type = "string"
+              },
+              values = {
+                type = "record",
+                fields = {
+                  { type = { type = "string", required = false, default = "string" } },
+                  { allow_null = { type = "boolean", required = false, default = true } },
+                  { is_array = { type = "number", required = false, default = 0 } },
+                  { required = { type = "boolean", required = false, default = false } },
+                  { precision = { type = "number", required = false } },
+                  { positive = { type = "boolean", required = false } },
+                  { min = { type = "number", required = false } },
+                  { max = { type = "number", required = false } },
+                  { match = { type = "string", required = false } },
+                  { not_match = { type = "string", required = false } },
+                  { enum = { type = "array", required = false, elements = { type = "string" } } }
+                }
               }
             }
           }

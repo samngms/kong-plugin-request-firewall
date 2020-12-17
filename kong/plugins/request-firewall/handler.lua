@@ -127,6 +127,27 @@ function plugin:access(config)
   if nil ~= path then
     path = string.gsub(path, "//", "/")
   end
+  
+  if config.graphql_match and config.graphql_match[path] then
+    local g_config = config.graphql_match[path]
+    local GqlParser = require('graphql-parser')
+    local parser = GqlParser:new()
+    local graph = parser:parse(kong.request.get_body())
+    for rootElement, fields in graph do
+      if nil == g_config[rootElement] then
+        returnError(config, "Root Element is not allowed")
+      end
+      
+      for queryType, value in fields do
+        if nil == g_config[rootElement][queryType] then
+          returnError(config, "Query Type is not allowed")
+        end
+        
+        m.validateField(config, g_config[rootElement][queryType], queryType, value)
+      end
+    end
+  end
+   
 
   local url_cfg = config.exact_match and config.exact_match[path]
   local pathParams = {}
