@@ -19,9 +19,7 @@ description = {
   license = "MIT"
 }
 
-dependencies = {
-  "graphql-parser >= 1.001"
-}
+dependencies = { "graphql-parser >= 1.0.0-1" }
 
 build = {
   type = "builtin",

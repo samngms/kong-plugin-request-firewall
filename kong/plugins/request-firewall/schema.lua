@@ -9,46 +9,42 @@ return {
       fields = {
         { err_code = { type = "number" } },
         { debug = { type = "boolean", default = false } },
-        { graphql_endpoint = { type = "array", required = false, elements = { type = "string" } } },
         { graphql_match = {
           type = "map",
-          keys = {
-            -- the url name e.g. /graphql
+          keys = { 
+            -- GraphQL path i.e. /graphql
             type = "string"
-          },
+          }, 
           values = {
-            -- this is the class definition, itself is also a map
             type = "map",
             keys = {
-              -- the root element name
+              -- GraphQL Operation Type e.g. Query, Mutation
               type = "string"
             },
             values = {
-              -- this is the class definition, itself is also a map
               type = "map",
               keys = {
-                -- this is the query type (query|mutation|subscription)
+                -- Graphql Root Name e.g. CreateToken
                 type = "string"
               },
               values = {
-                type = "record",
-                fields = {
-                  { type = { type = "string", required = false, default = "string" } },
-                  { allow_null = { type = "boolean", required = false, default = true } },
-                  { is_array = { type = "number", required = false, default = 0 } },
-                  { required = { type = "boolean", required = false, default = false } },
-                  { precision = { type = "number", required = false } },
-                  { positive = { type = "boolean", required = false } },
-                  { min = { type = "number", required = false } },
-                  { max = { type = "number", required = false } },
-                  { match = { type = "string", required = false } },
-                  { not_match = { type = "string", required = false } },
-                  { enum = { type = "array", required = false, elements = { type = "string" } } }
+                type = "map",
+                keys = {
+                  -- Graphql Field Name e.g. token
+                  type = "string"
+                },
+                values = {
+                  type = "record",
+                  fields = {
+                    { type = { type = "string", required = false, default = "string" } },
+                    { enum = { type = "array", required = false, elements = { type = "string" } } }
+                  }
                 }
               }
             }
           }
-        }},
+          }
+        },
         { exact_match = {
           type = "map",
           -- the key is the path of the url

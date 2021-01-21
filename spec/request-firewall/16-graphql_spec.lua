@@ -1,6 +1,6 @@
 local helpers = require "spec.helpers"
 local version = require("version").version or require("version")
-
+local GqlParser = require('graphql-parser')
 
 local PLUGIN_NAME = "request-firewall"
 local KONG_VERSION
@@ -20,16 +20,21 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        exact_match = {
+        debug = true,
+        graphql_match = {
           ["/graphql"] = {
-            POST = {
-              body = {
-                b_graphql_match = {type = "map"}
+            ["mutation"] = {
+              ["createToken"] = {
+                  token = {type = "string", enum = {"email", "password"}},
+                  clientMutationId = {type = "string"},
+                  errors = {type = "string"}
+                }
               }
             }
           }
         }
-      }
+      
+     
 
       if KONG_VERSION >= version("0.35.0") or
          KONG_VERSION == version("0.15.0") then
@@ -99,7 +104,11 @@ for _, strategy in helpers.each_strategy() do
             host = "postman-echo.com",
             ["Content-type"] = "application/json"
           },
-          body = '{"rootElement":"query", "operationName": "accountShow",  "variables": { "accountNum": "12345678" } }'
+          body = [[
+            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) {  clientMutationId    token } } ",
+              "variables": {"email":"a@a.com", "password":"b@b.com"}
+            }
+          ]]
         })
         assert.response(r).has.status(200)
       end)

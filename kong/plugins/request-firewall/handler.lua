@@ -13,6 +13,7 @@ local MultiPart = require("kong.plugins.request-firewall.multipart")
 local m = require("kong.plugins.request-firewall.access")
 local utils = require("kong.plugins.request-firewall.utils")
 
+
 -- constructor
 function plugin:new()
   plugin.super.new(self, plugin_name)
@@ -132,28 +133,34 @@ function plugin:access(config)
     local g_config = config.graphql_match[path]
     local GqlParser = require('graphql-parser')
     local parser = GqlParser:new()
-    local graph = parser:parse(kong.request.get_body())
-    for rootElement, fields in graph do
-      if nil == g_config[rootElement] then
-        returnError(config, "Root Element is not allowed")
+    local body, err, mimetype = kong.request.get_body()
+    local graph = parser:parse(body["query"])
+    
+    for _, op in pairs(graph) do
+      -- Check operation type e.g. query / mutation
+      if nil == g_config[op.type] then
+        returnError(config, op.type)  
+        return
       end
       
-      for queryType, value in fields do
-        if nil == g_config[rootElement][queryType] then
-          returnError(config, "Query Type is not allowed")
+      for _,root in pairs(op.fields) do
+        -- Check RootElement name e.g. CreateToken
+        if nil== g_config[op.type][root.name] then
+          returnError(config, root.name)  
+          return
         end
-
-        for schemaField in g_config[rootElement][queryType] do
-          if schemaFields.required == true and graph:hashFields({schemaField}) then
-            returnError(config, "Missing required field")
+        
+        for _, field in pairs(root.fields) do
+          -- Check field name e.g. token
+          if nil == g_config[op.type][root.name].subFields[field.name] then
+            returnError(config, field.name) 
+            return
           end
         end
-
-        m.validateField(config, g_config[rootElement][queryType], queryType, value)
       end
     end
     
-    
+    returnError(config, jData.variables, 200)
   end
    
 
