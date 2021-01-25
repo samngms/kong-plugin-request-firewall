@@ -23,16 +23,35 @@ for _, strategy in helpers.each_strategy() do
         debug = true,
         graphql_match = {
           ["/graphql"] = {
-            ["mutation"] = {
-              ["createToken"] = {
-                  token = {type = "string", enum = {"email", "password"}},
-                  clientMutationId = {type = "string"},
-                  errors = {type = "string"}
+            nestDepth = 4,
+            structure = {
+              ["mutation"] = {
+                ["createToken"] = {
+                    variables = {
+                      email = {type = "string", max = 20},
+                      password = {type = "string", enum = {"abc","def"}, required=true}
+                    },
+                    subfields = {
+                      token = {subElements = {"message", "path", "message.secret", "message.secret.deeperSecret"}},
+                      clientMutationId = {subElements = { "url"}}
+                    }
                 }
-              }
+              },
+              ["query"] = {
+                ["activateStatus"] = {
+                  variables = {
+                    teamId = {type = "number", min = 1, max = 100},
+                  },
+                  subfields = {
+                    businessAccountStatus = {subElements = {}},
+                    kycLevel = {subElements = {}}
+                  }
+                }
+              }  
             }
           }
         }
+      }
       
      
 
@@ -96,7 +115,7 @@ for _, strategy in helpers.each_strategy() do
 
     describe("testing body string", function()
 
-      it("unexpected param name", function()
+      it("Correct nested queries", function()
         local r = assert(client:send {
           method = "POST",
           path = "/graphql", 
@@ -105,12 +124,97 @@ for _, strategy in helpers.each_strategy() do
             ["Content-type"] = "application/json"
           },
           body = [[
-            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) {  clientMutationId    token } } ",
-              "variables": {"email":"a@a.com", "password":"b@b.com"}
+            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) {  token { path message { secret { deeperSecret } } } } } ",
+              "variables": {"email":"a@a.com", "password":"abc"}
             }
           ]]
         })
         assert.response(r).has.status(200)
+      end)
+      
+      it("Extra parameter in query", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) { PrivateSecret } }",
+              "variables": {"email":"a@a.com", "password":"abc"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
+      end)
+      
+      it("Correct number variable", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"query activateStatus ($teamId: ID!) { activateStatus (teamId: $teamId) { businessAccountStatus  kycLevel } }",
+              "variables": {"teamId": 1}
+            }
+          ]]
+        })
+        assert.response(r).has.status(200)
+      end)
+        
+      it("Incorrect number variable", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"query activateStatus ($teamId: ID!) { activateStatus (teamId: $teamId) { businessAccountStatus  kycLevel } }",
+              "variables": {"teamId": 0}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
+      end)
+      
+      it("Required parameter exist", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) {  token  } } ",
+              "variables": {"email":"a@a.com", "password":"abc"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(200)
+      end)
+      
+      it("Required parameter not exist", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken1 ($input: CreateTokenMutationInput!) { createToken (input: $input) {  token  } } ",
+              "variables": {"email":"a@a.com"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
       end)
 
 

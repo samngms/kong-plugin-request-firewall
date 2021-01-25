@@ -119,6 +119,31 @@ local function returnError(config, err, code)
   end
 end
 
+local function checkSubElements(enumList, subElements, name, layer)
+  if subElements ~= nil then 
+    if enumList == nil then
+      error({msg = "Sub Element is not allowed in " .. name})
+      return false
+    end
+    for _, element in pairs(subElements) do
+      local elementName = element.name
+      if layer ~= nil then
+        elementName = layer..'.'..element.name
+      end
+      
+      if not utils.contains(enumList, elementName) then
+        error({msg = name .. "." .. elementName .. " is not allowed"})
+        return false
+      end
+
+      if element.fields ~= nil then
+        checkSubElements(enumList, element.fields, name, elementName)
+      end
+    end
+    
+  end 
+end
+
 function plugin:access(config)
   plugin.super.access(self)
 
@@ -136,31 +161,75 @@ function plugin:access(config)
     local body, err, mimetype = kong.request.get_body()
     local graph = parser:parse(body["query"])
     
+    if graph:nestDepth() > g_config["nestDepth"] then
+      returnError(config, 'Nest depth exceeds limit') 
+      return
+    end
+    
+    --[[local path = ""
+    for a, b in pairs(graph) do
+      if nil ~= a then
+        path = path .. "a"..a .. " "
+      end
+      if nil ~= b.name then
+        path = path .. "b.name"..b.name .. " "
+      end
+      if nil ~= b.type then
+        path = path .. "b.type"..b.type .. " "
+      end
+    end
+    returnError(config, path)]]
+    
     for _, op in pairs(graph) do
       -- Check operation type e.g. query / mutation
-      if nil == g_config[op.type] then
-        returnError(config, op.type)  
-        return
-      end
       
-      for _,root in pairs(op.fields) do
-        -- Check RootElement name e.g. CreateToken
-        if nil== g_config[op.type][root.name] then
-          returnError(config, root.name)  
+      if nil ~= op.type then 
+      
+        if nil == g_config["structure"][op.type] then
+          returnError(config, 'Type '..op.type..' is not allowed')  
           return
         end
         
-        for _, field in pairs(root.fields) do
-          -- Check field name e.g. token
-          if nil == g_config[op.type][root.name].subFields[field.name] then
-            returnError(config, field.name) 
+        for _,root in pairs(op.fields) do
+          -- Check RootElement name e.g. CreateToken
+          rootConfig = g_config["structure"][op.type][root.name]
+          if nil == rootConfig then
+            returnError(config, 'Root element '..root.name..' is not allowed')  
             return
           end
+          
+          -- Check variables by validateTable
+          local status, err = pcall(function() m.validateTable(config, rootConfig.variables, config.allow_unknown_body, root.name, body["variables"]) end)
+          if not status then
+            returnError(config, tostring(err.msg))
+            return
+          end
+          
+          for _, field in pairs(root.fields) do
+            -- Check field name e.g. token
+            if nil == rootConfig.subfields[field.name] then
+              returnError(config, 'Field '..root.name..'.'..field.name..' is not allowed')  
+              return
+            end
+          
+            -- Check sub-elements within the field
+            -- if utils.contains(rootConfig.subfields[field.name].enum, field.fields)
+            --if rootConfig.subfields[field.name] then
+            
+            
+            local status, err = pcall(function() checkSubElements(rootConfig.subfields[field.name].subElements, field.fields, field.name) end)
+            --checkSubElements(config, rootConfig.subfields[field.name].subElements, field.fields, field.name)
+            if not status then
+              returnError(config, tostring(err.msg))
+              return
+            end
+          end
+          
         end
       end
     end
     
-    returnError(config, jData.variables, 200)
+    returnError(config, '', 200)
   end
    
 
