@@ -115,6 +115,40 @@ for _, strategy in helpers.each_strategy() do
 
     describe("testing body string", function()
 
+      it("Unlisted operation type", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"query createToken { createToken { token} }",
+              "variables": {"email":"a@a.com", "password":"abc"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
+      end)
+      
+      it("Unlisted root element", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"query createToken { createToken1 { token} }",
+              "variables": {"email":"a@a.com", "password":"abc"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
+      end)
+      
       it("Correct nested queries", function()
         local r = assert(client:send {
           method = "POST",
