@@ -1,13 +1,23 @@
 local FileReader = {}
 
-function FileReader:new(filename)
+-- filename is from ngx.req.get_body_file()
+-- content is from gx.req.get_body_data()
+-- if body < 8k, content will be valid, but filename will be null
+-- if body > 8k, content will be null, but filename will be valid
+function FileReader:new(filename, content)
     local obj = {}
     setmetatable(obj, self)
     self.__index = self
 
-    local fh = io.open(filename, "rb")
-    if not fh then return nil end
-    obj.fh = fh
+    if filename then
+        local fh = io.open(filename, "rb")
+        if not fh then return nil end
+        obj.fh = fh
+    elseif content then
+        obj.fh = nil
+        obj.data = content
+    end
+
     obj.offset = 0 -- offset starts with 0, NOT 1, I hate Lua's index starts with 1
     return obj
 end
@@ -17,7 +27,7 @@ end
 -- return actual size of the buffer, nil if no buffer
 function FileReader:load(num)
     if not self.data or self.data:len()-self.offset == 0 then
-        if io.type(self.fh) == "file" then
+        if self.fh and io.type(self.fh) == "file" then
             self.data = self.fh:read(num)
             self.offset = 0
             if not self.data then
@@ -31,7 +41,7 @@ function FileReader:load(num)
             return nil
         end
     elseif self.data:len()-self.offset < num then
-        if io.type(self.fh) == "file" then
+        if self.fh and io.type(self.fh) == "file" then
             local tmp = self.fh:read(num)
             if not tmp then
                 self.fh:close()

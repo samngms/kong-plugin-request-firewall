@@ -62,8 +62,12 @@ function MultiPart:isFormData()
     return self._isValid
 end
 
-function MultiPart:parseFile(filename) 
-    local reader = FileReader:new(filename)
+-- filename is from ngx.req.get_body_file()
+-- content is from gx.req.get_body_data()
+-- if body < 8k, content will be valid, but filename will be null
+-- if body > 8k, content will be null, but filename will be valid
+function MultiPart:parseFile(filename, content) 
+    local reader = FileReader:new(filename, content)
     self.reader = reader
 
     local init = true

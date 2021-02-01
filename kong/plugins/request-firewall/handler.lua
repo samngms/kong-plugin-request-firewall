@@ -71,8 +71,9 @@ local function wrapped(cfg, pathParams)
     -- we have to call get_body(), otherwies, get_body_file() will always be nil
     local body, err, mimetype = kong.request.get_body() 
     if parser:isFormData() then 
-      local filename = ngx.req.get_body_file()
-      body = parser:parseFile(filename) 
+      local content = ngx.req.get_body_data()  -- if body < 8k, get_body_data() will be valid
+      local filename = ngx.req.get_body_file() -- if body > 8k, get_body_file() will be valid
+      body = parser:parseFile(filename, content) 
     elseif nil ~= err then
       local te = kong.request.get_header("Transfer-Encoding")
       if nil ~= te and nil ~= te.find("chunked", 1, true) then
