@@ -12,6 +12,12 @@ jobs:
     env: KONG_VERSION=1.5.x
   - name: Kong CE 2.0.x
     env: KONG_VERSION=2.0.x
+  - name: Kong CE 2.1.x
+    env: KONG_VERSION=2.1.x
+  - name: Kong CE 2.2.x
+    env: KONG_VERSION=2.2.x
+  - name: Kong CE 2.3.x
+    env: KONG_VERSION=2.3.x
 
 install:
 - git clone --single-branch https://github.com/Kong/kong-pongo ../kong-pongo
