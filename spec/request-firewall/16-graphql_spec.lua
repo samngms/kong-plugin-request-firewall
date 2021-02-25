@@ -251,6 +251,58 @@ for _, strategy in helpers.each_strategy() do
         assert.response(r).has.status(400)
       end)
 
+      it("Harcoded wrong harameter in simple format", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken { createToken(token: asdfasdf, email:c@c.com, password:abc) { token} }",
+              "variables": {}
+            }
+          ]]
+        })
+        assert.response(r).has.status(400)
+      end)
+			
+			it("Harcoded Parameter in simple format", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken { createToken(email:c@c.com, password:def) { token} }",
+              "variables": {}
+            }
+          ]]
+        })
+        assert.response(r).has.status(200)
+      end)
+			
+			it("Harcoded Parameter in nested format", function()
+        local r = assert(client:send {
+          method = "POST",
+          path = "/graphql", 
+          headers = {
+            host = "postman-echo.com",
+            ["Content-type"] = "application/json"
+          },
+          body = [[
+            {"query":"mutation createToken($email:String!, $password:String!) { createToken(input:{email:b@b.com, password:def}) { token} }",
+              "variables": {"email":"a@a.com", "password":"abc"}
+            }
+          ]]
+        })
+        assert.response(r).has.status(200)
+      end)
+      
+
 
     end)
 

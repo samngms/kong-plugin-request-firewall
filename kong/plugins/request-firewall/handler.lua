@@ -119,29 +119,126 @@ local function returnError(config, err, code)
   end
 end
 
-local function checkSubElements(enumList, subElements, name, layer)
-  if subElements ~= nil then 
-    if enumList == nil then
-      error({msg = "Sub Element is not allowed in " .. name})
-      return false
-    end
-    for _, element in pairs(subElements) do
-      local elementName = element.name
-      if layer ~= nil then
-        elementName = layer..'.'..element.name
-      end
-      
-      if not utils.contains(enumList, elementName) then
-        error({msg = name .. "." .. elementName .. " is not allowed"})
-        return false
-      end
+local function checkSubElements(enumList, restrictedAccessFields, fields, rootName, layer)
+	if fields ~= nil then
+		for _, element in pairs(fields) do
+			local elementName = element.name
+			if layer ~= nil then
+				elementName = layer..'.'..element.name
+			end
+			
+			if enumList ~= nil then
+				if not utils.contains(enumList, elementName) then
+					error({msg = rootName .. "." .. elementName .. " is not allowed"})
+					return false
+				end
+			end
+			
+			if restrictedAccessFields ~= nil then
+				for _, forbiddenField in pairs(restrictedAccessFields) do
+					if string.match(element.name, forbiddenField) and not utils.contains(enumList, elementName) then
+						error({msg = rootName .. "." .. elementName .. " is access restricted"})
+						return false
+					end
+				end
+			end
+			
+  		if element.fields ~= nil then
+  			checkSubElements(enumList, restrictedAccessFields, element.fields, rootName, elementName)
+  		end
+  	end
+	end
+end
 
-      if element.fields ~= nil then
-        checkSubElements(enumList, element.fields, name, elementName)
-      end
-    end
+
+
+function resolveArgument(config, rootArguments, parent_op, bodyVariables)
+    local result = {}
     
-  end 
+    for _, arg in ipairs(rootArguments) do
+        local item = {}
+        local value = arg.value
+        if type(value) == "table" then
+          
+      		tmp_result = resolveArgument(config, value, parent_op, bodyVariables)
+--      		returnError(config,to_string(tmp_result))
+      		tableMerge(result, tmp_result)
+
+        elseif type(value) == "string" then
+		      if string.match(value, "^%$") then
+		          local variable = parent_op:findVariable(value)
+		          
+		          local tmp = string.sub(value, 2)
+		          local input_value = bodyVariables[tmp]
+		          
+		          if input_value then
+		          	if type(input_value) == "table" then
+
+		          		for k, v in pairs(input_value) do
+		          			result[k] = v
+		          		end
+		          		break
+		          	elseif type(input_value) == "string" then
+		              item["value"] = input_value
+		            end
+		          elseif variable ~= nil then
+		          	if variable.default_value then
+		              item["value"] = variable.default_value
+		            end
+		          end
+		      else
+		          item["value"] = value
+		      end
+		    end
+        result[arg.name] = item["value"]
+    end
+    return result
+end
+
+function tableMerge(t1, t2)
+   for k,v in pairs(t2) do
+      t1[k]=v
+   end 
+ 
+   return t1
+end
+
+function table_print (tt, indent, done)
+  done = done or {}
+  indent = indent or 0
+  if type(tt) == "table" then
+    local sb = {}
+    for key, value in pairs (tt) do
+      table.insert(sb, string.rep (" ", indent)) -- indent it
+      if type (value) == "table" and not done [value] then
+        done [value] = true
+        table.insert(sb, key .. " = {\n");
+        table.insert(sb, table_print (value, indent + 2, done))
+        table.insert(sb, string.rep (" ", indent)) -- indent it
+        table.insert(sb, "}\n");
+      elseif "number" == type(key) then
+        table.insert(sb, string.format("\"%s\"\n", tostring(value)))
+      else
+        table.insert(sb, string.format(
+            "%s = \"%s\"\n", tostring (key), tostring(value)))
+       end
+    end
+    return table.concat(sb)
+  else
+    return tt .. "\n"
+  end
+end
+
+function to_string( tbl )
+    if  "nil"       == type( tbl ) then
+        return tostring(nil)
+    elseif  "table" == type( tbl ) then
+        return table_print(tbl)
+    elseif  "string" == type( tbl ) then
+        return tbl
+    else
+        return tostring(tbl)
+    end
 end
 
 function plugin:access(config)
@@ -153,83 +250,74 @@ function plugin:access(config)
   if nil ~= path then
     path = string.gsub(path, "//", "/")
   end
-  
-  if config.graphql_match and config.graphql_match[path] then
-    local g_config = config.graphql_match[path]
+	
+	if config.graphql_match and config.graphql_match[path] then
+		local g_config = config.graphql_match[path]
     local GqlParser = require('graphql-parser')
     local parser = GqlParser:new()
     local body, err, mimetype = kong.request.get_body()
-    local graph = parser:parse(body["query"])
-    
-    if graph:nestDepth() > g_config["nestDepth"] then
-      returnError(config, 'Nest depth exceeds limit') 
-      return
-    end
-    
-    --[[local path = ""
-    for a, b in pairs(graph) do
-      if nil ~= a then
-        path = path .. "a"..a .. " "
-      end
-      if nil ~= b.name then
-        path = path .. "b.name"..b.name .. " "
-      end
-      if nil ~= b.type then
-        path = path .. "b.type"..b.type .. " "
-      end
-    end
-    returnError(config, path)]]
-    
-    for _, op in pairs(graph) do
-      -- Check operation type e.g. query / mutation
-      
-      if nil ~= op.type then 
-      
-        if nil == g_config["structure"][op.type] then
-          returnError(config, 'Type '..op.type..' is not allowed')  
-          return
-        end
-        
-        for _,root in pairs(op.fields) do
-          -- Check RootElement name e.g. CreateToken
-          rootConfig = g_config["structure"][op.type][root.name]
-          if nil == rootConfig then
-            returnError(config, 'Root element '..root.name..' is not allowed')  
-            return
-          end
-          
-          -- Check variables by validateTable
-          local status, err = pcall(function() m.validateTable(config, rootConfig.variables, config.allow_unknown_body, root.name, body["variables"]) end)
-          if not status then
-            returnError(config, tostring(err.msg))
-            return
-          end
-          
-          for _, field in pairs(root.fields) do
-            -- Check field name e.g. token
-            if nil == rootConfig.subfields[field.name] then
-              returnError(config, 'Field '..root.name..'.'..field.name..' is not allowed')  
-              return
-            end
-          
-            -- Check sub-elements within the field
-            -- if utils.contains(rootConfig.subfields[field.name].enum, field.fields)
-            --if rootConfig.subfields[field.name] then
-            
-            
-            local status, err = pcall(function() checkSubElements(rootConfig.subfields[field.name].subElements, field.fields, field.name) end)
-            --checkSubElements(config, rootConfig.subfields[field.name].subElements, field.fields, field.name)
-            if not status then
-              returnError(config, tostring(err.msg))
-              return
-            end
-          end
-          
-        end
-      end
-    end
-    
-    returnError(config, '', 200)
+    	
+    if body ~= nil and body["query"] ~= nil then
+		  local graph = parser:parse(body["query"])
+		  
+			---local argument = graph:listOps()[1]:getRootFields()[1]:resolveArgument({})
+			---returnError(config, 'Field '..to_string(argument)..' is not allowed')
+		  
+		  if graph:nestDepth() > g_config["nestDepth"] then
+		  	returnError(config, 'Nest depth exceeds limit')	
+		    return
+		  end
+		  
+		  for _, op in pairs(graph) do
+		    -- Check operation type e.g. query / mutation
+		    
+		    if nil ~= op.type then 
+		   
+				  if nil == g_config["structure"][op.type] then
+				    returnError(config, 'Type '..op.type..' is not allowed')	
+				    return
+				  end
+				  
+				  for _,root in pairs(op.fields) do
+				    -- Check RootElement name e.g. CreateToken
+				    local rootConfig = g_config["structure"][op.type][root.name]
+				    if nil == rootConfig then
+				      returnError(config, 'Root element '..root.name..' is not allowed')	
+				      return
+				    end
+				    
+				    -- Check variables by validateTable
+				    if type(body["variables"]) ~= "table" then
+				    	returnError(config, "Body variables in wrong format")
+					    return
+				    end
+				    				    
+				    resolvedVariables = resolveArgument(config, root.arguments, op, body["variables"])
+				    --returnError(config,to_string(resolvedVariables))
+				    
+					  local status, err = pcall(function() m.validateTable(config, rootConfig.variables, config.allow_unknown_body, root.name, resolvedVariables) end)
+					  
+					  if not status then
+					    returnError(config, tostring(err.msg))
+					    return
+					  end
+				    
+			      -- Check field name e.g. token
+				    local status, err = pcall(function() checkSubElements(rootConfig.fields, g_config["accessRestrictedFields"],root.fields, root.name) end)
+				    if not status then
+				      returnError(config, tostring(err.msg))
+				      return
+				    end
+		        
+		      end
+		    end
+		  end
+		else
+			returnError(config, 'Body is empty / Error has occured')	
+		  return
+		end
+		return
+    --returnError(config, '', 200)
   end
    
 

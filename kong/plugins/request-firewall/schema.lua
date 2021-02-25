@@ -10,74 +10,63 @@ return {
         { err_code = { type = "number" } },
         { debug = { type = "boolean", default = false } },
         { graphql_match = {
-          type = "map",
+        	type = "map",
           keys = { 
-            -- GraphQL path i.e. /graphql
-            type = "string"
+          	-- GraphQL path i.e. /graphql
+          	type = "string"
           }, 
           values = {
-            type = "record",
-            fields = {
-              { nestDepth = { type = "number" } },
-              { structure = {
-                type = "map",
-                keys = {
-                  -- GraphQL Operation Type e.g. Query, Mutation
-                  type = "string"
-                },
-                values = {
-                  type = "map",
-                  keys = {
-                    -- Graphql Root Name e.g. CreateToken
-                    type = "string"
-                  },
-                  values = {
-                    type = "record",
-                    fields = {
-                      { variables = {
-                        type = "map",
-                        keys = {
-                          -- Graphql Field Name e.g. token
-                          type = "string"
-                        },
-                        values = {
-                          type = "record",
-                          fields = {
-                            { type = { type = "string", required = false, default = "string" } },
-                            { allow_null = { type = "boolean", required = false, default = true } },
-                            { is_array = { type = "number", required = false, default = 0 } },
-                            { required = { type = "boolean", required = false, default = false } },
-                            { precision = { type = "number", required = false } },
-                            { positive = { type = "boolean", required = false } },
-                            { min = { type = "number", required = false } },
-                            { max = { type = "number", required = false } },
-                            { match = { type = "string", required = false } },
-                            { not_match = { type = "string", required = false } },
-                            { enum = { type = "array", required = false, elements = { type = "string" } } }
-                            }
-                        }
-                        }
-                      },
-                      { subfields = {
-                          type = "map",
-                          keys = {
-                            -- Graphql Field Name e.g. token
-                            type = "string"
-                          },
-                          values = {
-                            type = "record",
-                            fields = {
-                              { subElements = { type = "array", required = false, elements = { type = "string" } } }
-                            }
-                          }
-                        }
-                      }
-                      }
-                    }
-                  }
-                  }
-                }
-             }
+          	type = "record",
+          	fields = {
+          		{ nestDepth = { type = "number" } },
+          		{ accessRestrictedFields = { type = "array", required = false, elements = { type = "string" } } },
+	        		{ structure = {
+					      type = "map",
+					      keys = {
+					      	-- GraphQL Operation Type e.g. Query, Mutation
+					        type = "string"
+					      },
+					      values = {
+					        type = "map",
+					        keys = {
+					        	-- Graphql Root Name e.g. CreateToken
+					          type = "string"
+					        },
+					        values = {
+					          type = "record",
+					          fields = {
+					            { variables = {
+					              type = "map",
+					              keys = {
+					                -- Graphql Field Name e.g. token
+					                type = "string"
+					              },
+					              values = {
+					                type = "record",
+					                fields = {
+					                  { type = { type = "string", required = false, default = "string" } },
+					                  { allow_null = { type = "boolean", required = false, default = true } },
+					                  { is_array = { type = "number", required = false, default = 0 } },
+					                  { required = { type = "boolean", required = false, default = false } },
+					                  { precision = { type = "number", required = false } },
+					                  { positive = { type = "boolean", required = false } },
+					                  { min = { type = "number", required = false } },
+					                  { max = { type = "number", required = false } },
+					                  { match = { type = "string", required = false } },
+					                  { not_match = { type = "string", required = false } },
+					                  { enum = { type = "array", required = false, elements = { type = "string" } } }
+					                  }
+					              }
+					              }
+					            },
+					            { fields = {type = "array", required = false, elements = { type = "string" } } 
+					            }
+					            }
+					          }
+					        }
+					        }
+					      }
+			       }
           }
           }
         },
