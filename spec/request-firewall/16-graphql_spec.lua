@@ -20,36 +20,37 @@ for _, strategy in helpers.each_strategy() do
     lazy_setup(function()
       local bp, route1
       local myconfig = {
-        debug = true,
+      	debug = true,
         graphql_match = {
           ["/graphql"] = {
-            nestDepth = 4,
-            structure = {
-              ["mutation"] = {
-                ["createToken"] = {
-                    variables = {
-                      email = {type = "string", max = 20},
-                      password = {type = "string", enum = {"abc","def"}, required=true}
-                    },
-                    subfields = {
-                      token = {subElements = {"message", "path", "message.secret", "message.secret.deeperSecret"}},
-                      clientMutationId = {subElements = { "url"}}
-                    }
-                }
-              },
-              ["query"] = {
-                ["activateStatus"] = {
-                  variables = {
-                    teamId = {type = "number", min = 1, max = 100},
-                  },
-                  subfields = {
-                    businessAccountStatus = {subElements = {}},
-                    kycLevel = {subElements = {}}
-                  }
-                }
-              }  
-            }
-          }
+          	nestDepth = 4,
+          	accessRestrictedFields = {".*password.*", ".*secret.*", ".*supersecret.*"},
+          	structure = {
+		          ["mutation"] = {
+		            ["createToken"] = {
+		                variables = {
+		                  email = {type = "string", max = 20},
+		                  password = {type = "string", enum = {"abc","def"}, required=true}
+		                },
+		                fields = {"token", "token.message", "token.path", "token.message.secret", "message.secret.deeperSecret", "clientMutationId","clientMutationId.url"}
+		            }
+		          },
+		          ["query"] = {
+		            ["activateStatus"] = {
+		              variables = {
+		                teamId = {type = "number", min = 1, max = 100}
+		              },
+		              fields = {"businessAccountStatus","kycLevel"}
+		            },
+		            ["checkPassword"] = {
+		              variables = {
+		                name = {type = "string", max = 20}
+		              },
+		              fields = {"secret","password"}
+		            }
+		          }  
+		        }
+		      }
         }
       }
       
