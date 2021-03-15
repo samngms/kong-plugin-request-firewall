@@ -318,9 +318,38 @@ function m.validateField(config, field_attrs, name, value)
         if nil == custom_class then
             return m.fail("custom_classes not found: " .. type_name ..". This is config error.")
         end
-        -- TODO we don't really know if nested_value is a table or an array
-        if not m.validateTable(config, custom_class, false, name, value) then
-            return false
+        -- make sure "value" is really a table
+        if type(value) ~= "table" then
+            return m.fail("custom_classes: " .. type_name .. ", input is not a table but type=" .. type(value));
+        end
+        local is_array = field_attrs.is_array or 0
+        if 2 == is_array then
+            -- 2 means "can be" an array
+            for entry_name, entry_value in pairs(value) do
+                if nil == tonumber(entry_name) then
+                    is_array = 0
+                    break
+                end
+            end
+            if is_array == 2 then
+                is_array = 1
+            end
+        end
+        if 1 == is_array then
+            -- expecting array
+            for entry_name, entry_value in pairs(value) do
+                if nil == tonumber(entry_name) then
+                    return m.fail("custom_classes: " .. type_name .. ", input is not an array, one of the key is a string=" .. entry_name);
+                end
+                if not m.validateTable(config, custom_class, false, name, entry_value) then
+                    return false
+                end
+            end
+        else
+            -- not expecting array
+            if not m.validateTable(config, custom_class, false, name, value) then
+                return false
+            end
         end
         return true
     end
