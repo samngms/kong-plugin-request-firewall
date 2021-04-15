@@ -150,51 +150,6 @@ local function checkSubElements(enumList, restrictedAccessFields, fields, rootNa
 	end
 end
 
-
-
-function resolveArgument(config, rootArguments, parent_op, bodyVariables)
-    local result = {}
-    
-    for _, arg in ipairs(rootArguments) do
-        local item = {}
-        local value = arg.value
-        if type(value) == "table" then
-          
-      		tmp_result = resolveArgument(config, value, parent_op, bodyVariables)
---      		returnError(config,to_string(tmp_result))
-      		tableMerge(result, tmp_result)
-
-        elseif type(value) == "string" then
-		      if string.match(value, "^%$") then
-		          local variable = parent_op:findVariable(value)
-		          
-		          local tmp = string.sub(value, 2)
-		          local input_value = bodyVariables[tmp]
-		          
-		          if input_value then
-		          	if type(input_value) == "table" then
-
-		          		for k, v in pairs(input_value) do
-		          			result[k] = v
-		          		end
-		          		break
-		          	elseif type(input_value) == "string" then
-		              item["value"] = input_value
-		            end
-		          elseif variable ~= nil then
-		          	if variable.default_value then
-		              item["value"] = variable.default_value
-		            end
-		          end
-		      else
-		          item["value"] = value
-		      end
-		    end
-        result[arg.name] = item["value"]
-    end
-    return result
-end
-
 function tableMerge(t1, t2)
    for k,v in pairs(t2) do
       t1[k]=v
@@ -292,14 +247,19 @@ function plugin:access(config)
 					    return
 				    end
 				    				    
-				    resolvedVariables = resolveArgument(config, root.arguments, op, body["variables"])
-				    --returnError(config,to_string(resolvedVariables))
+				    -- Get and transform root argument
+				    if root.arguments ~= nil then
+						  local resolvedArguments = {}
+						  for name, value in pairs(root:resolveArgument({})) do
+						  	resolvedArguments[name] = value["value"]
+						  end
 				    
-					  local status, err = pcall(function() m.validateTable(config, rootConfig.variables, config.allow_unknown_body, root.name, resolvedVariables) end)
-					  
-					  if not status then
-					    returnError(config, tostring(err.msg))
-					    return
+							local status, err = pcall(function() m.validateTable(config, rootConfig.variables, config.allow_unknown_body, root.name, resolvedArguments) end)
+							
+							if not status then
+							  returnError(config, tostring(err.msg))
+							  return
+							end
 					  end
 				    
 			      -- Check field name e.g. token
